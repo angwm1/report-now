@@ -1,0 +1,9 @@
+/* File: /src/app/styles/globals.css */
+@import "tailwindcss/preflight.css"; /* Replaces @tailwind base */
+@import "tailwindcss/utilities.css"; /* Replaces @tailwind utilities */
+@import "tailwindcss";
+
+/* Custom global styles */
+body {
+  font-family: sans-serif;
+}
