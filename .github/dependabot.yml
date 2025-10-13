@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Update npm dependencies for your Next.js and Prisma webapp
+  - package-ecosystem: "npm"           # Manage JavaScript dependencies (Next.js, Prisma, etc.)
+    directory: "/"                   # Location of your package.json and package-lock.json/yarn.lock
+    schedule:
+      interval: "monthly"            # Check for updates on a monthly basis
+      # Optionally, you can also set a specific day and time
+      # day: "monday"
+      # time: "04:00"
+    open-pull-requests-limit: 3       # Limit the number of open PRs to avoid overload
+    rebase-strategy: "auto"           # Automatically rebase the PR if it falls behind
+    labels:                         # Add labels for easier filtering and tracking
+      - "dependencies"
+      - "npm-update"
+    commit-message:
+      prefix: "deps"                # Prefix for commit messages for dependency updates
+    allow:
+      - dependency-type: "direct"   # Update direct dependencies
+      - dependency-type: "indirect" # Update transitive (indirect) dependencies
+
+  # Update GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"                   # Location of your GitHub workflow files (usually in .github/workflows)
+    schedule:
+      interval: "monthly"            # Check for updates on a monthly basis
+    open-pull-requests-limit: 2       # Fewer PRs for GitHub Actions updates
+    rebase-strategy: "auto"           # Automatically rebase outdated PRs
+    labels:
+      - "dependencies"
+      - "github-actions-update"
+    commit-message:
+      prefix: "github-actions"      # Commit prefix for GitHub Actions updates

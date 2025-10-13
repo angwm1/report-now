@@ -1,0 +1,64 @@
+// File: /prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String?
+  email         String   @unique
+  password      String?
+  role          String   @default("citizen")
+  contactNumber String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  issues        Issue[]
+  reviews       Review[]
+}
+
+model Issue {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  status      String   @default("Pending")
+  timeline    Json?
+  category    String?
+  latitude    Float?
+  longitude   Float?
+  location    String?  // New: stores human-readable location (e.g., "Punggol, Singapore")
+  mediaUrls   Json?    // New: stores an array of media URLs (images, videos)
+  reporterId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  reviews     Review[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  issueId   Int
+  userId    Int
+  userName  String?
+  createdAt DateTime @default(now())
+
+  issue     Issue    @relation(fields: [issueId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Invite {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  email     String
+  role      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  used      Boolean  @default(false)
+}
