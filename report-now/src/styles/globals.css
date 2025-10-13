@@ -1,9 +1,121 @@
 /* File: /src/app/styles/globals.css */
-@import "tailwindcss/preflight.css"; /* Replaces @tailwind base */
-@import "tailwindcss/utilities.css"; /* Replaces @tailwind utilities */
 @import "tailwindcss";
 
-/* Custom global styles */
-body {
-  font-family: sans-serif;
+/* 1) Design tokens (HSL-based) */
+@theme {
+  /* Fonts */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* ---------- Colors (HSL) ---------- */
+  /* Primary (Red — balanced for UI, not neon) */
+  --color-primary-50:  hsl(0 86% 97%);
+  --color-primary-100: hsl(0 93% 94%);
+  --color-primary-200: hsl(0 96% 89%);
+  --color-primary-300: hsl(0 94% 82%);
+  --color-primary-400: hsl(0 91% 71%);
+  --color-primary-500: hsl(0 84% 60%); /* main */
+  --color-primary-600: hsl(0 72% 51%);
+  --color-primary-700: hsl(0 73% 42%);
+  --color-primary-800: hsl(0 70% 35%);
+  --color-primary-900: hsl(0 63% 31%);
+  --color-primary-950: hsl(0 75% 15%);
+
+  /* Neutral / Gray (slate-like for charts, tables, text) */
+  --color-gray-50:  hsl(210 40% 98%);
+  --color-gray-100: hsl(214 32% 95%);
+  --color-gray-200: hsl(214 31% 91%);
+  --color-gray-300: hsl(213 27% 84%);
+  --color-gray-400: hsl(215 20% 65%);
+  --color-gray-500: hsl(215 16% 47%);
+  --color-gray-600: hsl(215 19% 35%);
+  --color-gray-700: hsl(215 25% 27%);
+  --color-gray-800: hsl(217 33% 17%);
+  --color-gray-900: hsl(222 47% 11%);
+  --color-gray-950: hsl(229 84% 5%);
+
+  /* Accents (subtle, for links/filters/charts) — cyan-ish */
+  --color-accent-50:  hsl(187 100% 97%);
+  --color-accent-100: hsl(187 92% 90%);
+  --color-accent-200: hsl(187 92% 81%);
+  --color-accent-300: hsl(187 85% 66%);
+  --color-accent-400: hsl(187 92% 48%);
+  --color-accent-500: hsl(187 85% 41%);
+  --color-accent-600: hsl(187 100% 32%);
+  --color-accent-700: hsl(187 100% 26%);
+  --color-accent-800: hsl(187 100% 20%);
+  --color-accent-900: hsl(187 100% 16%);
+
+  /* Status colors (for reports) */
+  --color-success-500: hsl(142 72% 29%); /* green-600-ish */
+  --color-warning-500: hsl(38 92% 50%);  /* amber-500 */
+  --color-danger-500:  hsl(0 84% 60%);   /* same as primary-500 */
+  --color-info-500:    hsl(217 91% 60%); /* blue-500 */
+
+  /* Semantic aliases */
+  --color-background: hsl(210 33% 98%); /* nicer off-white */
+  --color-surface:    hsl(0 0% 100%);   /* cards, panels */
+  --color-foreground: hsl(222 47% 11%); /* primary text */
+  --color-muted:      hsl(215 16% 47%); /* subdued text */
+  --color-border:     hsl(220 13% 91%); /* light borders */
+  --color-ring:       hsl(0 84% 60%);   /* focus rings (primary-500) */
+
+  /* Semantic interactive tokens for primary */
+  --color-primary:         hsl(0 84% 60%); /* base */
+  --color-primary-hover:   hsl(0 72% 51%); /* hover */
+  --color-primary-active:  hsl(0 73% 42%); /* active/pressed */
+}
+
+/* 2) Dark mode overrides */
+:root.dark {
+  --color-background: hsl(222 47% 7%);   /* near-slate */
+  --color-surface:    hsl(222 47% 10%);  /* panel */
+  --color-foreground: hsl(210 40% 96%);  /* text */
+  --color-muted:      hsl(215 20% 65%);  /* subdued text */
+  --color-border:     hsl(215 28% 17%);  /* borders */
+  --color-ring:       hsl(0 91% 71%);    /* primary-400 */
+}
+
+/* 3) Helpful component patterns using @apply */
+.container-page {
+  @apply min-h-dvh bg-background text-foreground font-sans;
+}
+
+.card {
+  @apply bg-surface rounded-lg p-5 shadow-sm border border-border;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2.5 text-sm font-medium ring-2 ring-transparent transition;
+}
+
+/* Use semantic primary tokens for better theming control */
+.btn-primary {
+  @apply text-white ring-ring;
+  background: var(--color-primary);
+}
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+}
+.btn-primary:active {
+  background: var(--color-primary-active);
+}
+
+.btn-outline {
+  @apply bg-transparent text-foreground border border-border hover:bg-gray-100 ring-ring;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+}
+
+.badge-success { background: hsl(142 72% 29% / 0.1); color: hsl(142 72% 29%); }
+.badge-warning { background: hsl(38 92% 50% / 0.1);  color: hsl(38 92% 50%); }
+.badge-danger  { background: hsl(0 84% 60% / 0.1);   color: hsl(0 84% 60%); }
+.badge-info    { background: hsl(217 91% 60% / 0.1); color: hsl(217 91% 60%); }
+
+/* 4) Focus ring helper */
+:where(button, a, input, select, textarea):focus-visible {
+  @apply outline-none ring-2;
+  --tw-ring-color: var(--color-ring);
 }
