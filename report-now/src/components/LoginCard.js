@@ -37,12 +37,8 @@ export default function LoginCard() {
     }
   }
 
-  function handleSingpass() {
-    alert("Singpass login placeholder! Replace with real OIDC flow.");
-  }
-
   return (
-    <div className="bg-white w-full max-w-md p-8 rounded-lg shadow-lg">
+    <div className="bg-white w-full w-md lg:w-lg p-8 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold mb-6 text-center">Welcome Back!</h2>
       {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
       <form onSubmit={handleLogin} className="flex flex-col space-y-5">
@@ -71,14 +67,14 @@ export default function LoginCard() {
         <div className="flex justify-end">
           <Link
             href="/forgot-password"
-            className="text-sm text-blue-500 hover:underline"
+            className="text-sm text-accent-500 hover:underline"
           >
             Forgot password?
           </Link>
         </div>
         <button
           type="submit"
-          className="bg-[#FF6F3C] text-white py-2 rounded hover:bg-orange-600 transition-all flex items-center justify-center"
+          className="bg-primary text-white py-2 rounded hover:bg-primary-hover transition-all flex items-center justify-center"
           disabled={loading}
         >
           {loading ? <FaSpinner className="animate-spin" /> : "Login"}
@@ -86,27 +82,10 @@ export default function LoginCard() {
       </form>
       <p className="mt-4 text-center text-sm">
         Not a member?{" "}
-        <Link href="/register" className="text-blue-500 hover:underline">
+        <Link href="/register" className="text-accent-500 hover:underline">
           Register now
         </Link>
       </p>
-      <div className="flex items-center my-5">
-        <hr className="flex-grow border-t border-gray-300" />
-        <span className="mx-2 text-gray-400">Or</span>
-        <hr className="flex-grow border-t border-gray-300" />
-      </div>
-      <button
-        onClick={handleSingpass}
-        className="w-full py-2 rounded transition-all bg-transparent"
-      >
-        <Image
-          src="/images/singpass-logo.png"
-          alt="Log in with Singpass"
-          width={256} // For example, equivalent to Tailwind's w-64 (256px)
-          height={100} // Adjust the height to preserve your image's aspect ratio
-          className="mx-auto transition-all duration-200 hover:brightness-75"
-        />
-      </button>
     </div>
   );
 }
