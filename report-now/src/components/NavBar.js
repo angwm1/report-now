@@ -37,8 +37,8 @@ export default function NavBar() {
   // 生成链接样式
   const getLinkStyle = (path) => {
     return isActive(path) 
-      ? "text-blue-500 font-bold"
-      : "hover:text-blue-500 text-gray-600"; 
+      ? "text-accent-500 font-bold"
+      : "hover:text-accent-500 text-gray-600"; 
   };
 
   return (
@@ -48,14 +48,14 @@ export default function NavBar() {
         <Link href="/issues" className="flex items-center space-x-2 text-xl font-bold text-gray-800">
         <div className="flex items-center justify-center"> {/* Add padding around the image */}
             <Image
-              src="/icon.png" 
-              alt="ReportService Logo"
+              src="/ReportNow.png" 
+              alt="ReportNow Logo"
               width={54} /* Slightly reduced to account for padding */
               height={54}
               className="object-contain"
             />
           </div>
-          <span className="flex items-center h-[54px]">Report Service</span>
+          <span className="flex items-center h-[54px]">ReportNow</span>
         </Link>
 
         {/* Desktop Nav Links */}
@@ -81,7 +81,7 @@ export default function NavBar() {
           ) : (
             <button
               onClick={() => redirect("/")}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+              className="bg-primary-500 text-white px-4 py-2 rounded hover:bg-accent-600 transition"
             >
               Sign In
             </button>
