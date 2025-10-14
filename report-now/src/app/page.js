@@ -9,7 +9,6 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen">
       <HeroSection />
       <div className="flex-grow flex flex-col items-center justify-center p-4 bg-gray-50">
-        <LoginCard />
       </div>
     </div>
   );
