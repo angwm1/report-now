@@ -11,7 +11,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen bg-gray-50">
+      <body className="flex flex-col min-h-screen bg-background">
         <SessionProviderWrapper>
           {/* ClientNavFooter is a client component that conditionally renders NavBar/Footer */}
           <ClientNavFooter>
