@@ -68,9 +68,9 @@ function RegisterContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center">Register</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">Register an account</h1>
         {error && (
           <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
         )}
@@ -132,7 +132,7 @@ function RegisterContent() {
                 setFormData({ ...formData, contactNumber: e.target.value })
               }
               className="border border-gray-300 p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-              placeholder="e.g. 0123456789"
+              placeholder="e.g. 1234 5678"
             />
           </div>
           {/* Optionally, display the invite token (read-only) if present */}{" "}
@@ -143,7 +143,7 @@ function RegisterContent() {
           )}
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-all"
+            className="w-full bg-primary hover:bg-primary-hover text-white py-2 rounded hover:bg-blue-600 transition-all"
             disabled={loading}
           >
             {loading ? "Registering..." : "Register"}
@@ -151,7 +151,7 @@ function RegisterContent() {
         </form>
         <p className="mt-6 text-center text-sm">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-blue-500 hover:underline">
+          <Link href="/auth/login" className="text-accent-500 hover:underline">
             Login here
           </Link>
         </p>
