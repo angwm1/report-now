@@ -1,13 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    // either this:
-    domains: ["res.cloudinary.com"],
-    // or the more explicit version:
-    // remotePatterns: [
-    //   { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" }
-    // ],
-  },
+	images: {
+		remotePatterns: [
+			{ protocol: "https", hostname: "res.cloudinary.com" },
+			{ protocol: "https", hostname: "*.cloudinary.com" },
+		],
+		// Back-compat domains option in case remotePatterns pattern matching differs per env
+		domains: ["res.cloudinary.com"],
+	},
 };
 
 export default nextConfig; // if using ESM (.mjs / .ts)
