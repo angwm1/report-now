@@ -1,150 +1,161 @@
-// src/app/api/issues/route.js
+// File: /src/app/api/issues/route.js
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { createHash } from "crypto";
+import { getToken } from "next-auth/jwt";
+import cloudinary from "cloudinary";
+import streamifier from "streamifier";
+import { categorize } from "../../../lib/actions";
+
+// Configure Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const prisma = new PrismaClient();
 
-// Force Node.js runtime (required for Buffer/crypto)
-export const runtime = "nodejs";
+export const config = {
+  api: {
+    bodyParser: false, // Disable Next.js built-in body parser
+  },
+};
 
-// --- Helpers: Cloudinary signed upload ---
-function cloudinarySignature(paramsToSign, apiSecret) {
-  // paramsToSign is an object (e.g., { timestamp, folder })
-  // Cloudinary requires params sorted by key and joined as key=value without separators except &
-  const sortedKeys = Object.keys(paramsToSign).sort();
-  const toSign = sortedKeys
-    .map((k) => `${k}=${paramsToSign[k]}`)
-    .join("&");
-  return createHash("sha1").update(`${toSign}${apiSecret}`).digest("hex");
+// Helper function to upload a file to Cloudinary
+async function uploadFile(file) {
+  // Convert the file (from request.formData()) to a Buffer
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.v2.uploader.upload_stream(
+      { folder: "issues" },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result.secure_url);
+        }
+      }
+    );
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
 }
 
-async function uploadToCloudinary(files) {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-  if (!cloudName || !apiKey || !apiSecret) {
-    throw new Error("Cloudinary environment variables are not configured");
-  }
-
-  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
-  const results = [];
-
-  for (const file of files) {
-    // Convert Blob/File to base64 data URI
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
-    const dataUri = `data:${file.type || "application/octet-stream"};base64,${base64}`;
-
-    // Signed upload: only timestamp is required for minimal signing
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signature = cloudinarySignature({ timestamp }, apiSecret);
-
-    const form = new FormData();
-    form.append("file", dataUri);
-    form.append("api_key", apiKey);
-    form.append("timestamp", String(timestamp));
-    form.append("signature", signature);
-
-    const res = await fetch(uploadUrl, { method: "POST", body: form });
+// Helper function to do reverse geocoding via OpenStreetMap (Nominatim)
+async function reverseGeocodeOSM(lat, lon) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
+    const res = await fetch(url);
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Cloudinary upload failed: ${res.status} ${errText}`);
+      throw new Error(`Nominatim error: ${res.status} ${res.statusText}`);
     }
-    const json = await res.json();
-    results.push(json.secure_url || json.url);
+    const data = await res.json();
+    // data.display_name often contains a human-readable address
+    // If not found, fallback to "Unknown location"
+    return data.display_name || "Unknown location";
+  } catch (err) {
+    console.error("Reverse geocoding error:", err);
+    return null; // fallback
   }
-
-  return results;
 }
 
 export async function GET() {
   try {
-    const issues = await prisma.issue.findMany({
-      orderBy: { createdAt: "desc" },
+    const issues = await prisma.issue.findMany();
+    return NextResponse.json(issues, {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
-    return NextResponse.json(issues);
   } catch (error) {
     console.error("Error fetching issues:", error);
     return NextResponse.json(
-      { error: "Failed to fetch issues" },
-      { status: 500 }
+      { error: "Internal Server Error" },
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
 
 export async function POST(request) {
-  try {
-    // Require auth
-  const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Please sign in to report an issue." },
-        { status: 401 }
-      );
-    }
+  // Authenticate request using JWT token
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  if (!token) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
-    const form = await request.formData();
-    const title = (form.get("title") || "").toString().trim();
-    const description = (form.get("description") || "").toString().trim();
-    const latitudeRaw = form.get("latitude");
-    const longitudeRaw = form.get("longitude");
-    const mediaEntries = form.getAll("media"); // array of File/Blob
+  try {
+    // Parse form data from the request
+    const formData = await request.formData();
+    
+    // Extract text fields
+    const title = formData.get("title");
+    const description = formData.get("description");
+    const latitude = formData.get("latitude");
+    const longitude = formData.get("longitude");
 
     if (!title || !description) {
       return NextResponse.json(
         { error: "Title and description are required." },
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Optional location coords
-    const latitude = latitudeRaw != null ? parseFloat(String(latitudeRaw)) : null;
-    const longitude = longitudeRaw != null ? parseFloat(String(longitudeRaw)) : null;
+    // Convert lat/lon to floats if provided
+    let lat = null;
+    let lon = null;
+    if (latitude) lat = parseFloat(latitude);
+    if (longitude) lon = parseFloat(longitude);
 
-    // Upload any images to Cloudinary (if present)
-    let mediaUrls = [];
-    const validFiles = mediaEntries.filter((f) => {
-      // Next.js provides Blob-like objects here; ensure they look like File
-      return typeof f === "object" && f && typeof f.arrayBuffer === "function";
-    });
-    if (validFiles.length > 0) {
-      mediaUrls = await uploadToCloudinary(validFiles);
+    // Reverse geocode to get a human-readable location (if lat/lon are valid)
+    let locationName = null;
+    if (lat && lon) {
+      locationName = await reverseGeocodeOSM(lat, lon);
     }
 
-    // Find reporter id by email to be safe
-    const reporterEmail = session.user.email;
-    const reporter = reporterEmail
-      ? await prisma.user.findUnique({ where: { email: reporterEmail } })
-      : null;
-    if (!reporter) {
-      return NextResponse.json(
-        { error: "Reporter account not found." },
-        { status: 400 }
-      );
+    // Process file uploads if any
+    const mediaFiles = formData.getAll("media"); // "media" is the field name for files
+    const mediaUrls = [];
+    const imageUrls = [];
+    for (const file of mediaFiles) {
+      try {
+        const url = await uploadFile(file);
+        mediaUrls.push(url);
+        if (file.type.startsWith("image/")) imageUrls.push(url);
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        // optionally return an error or continue
+      }
     }
 
-    const created = await prisma.issue.create({
+    // AI-generated category
+    const category = await categorize(title, description, imageUrls);
+
+    // Create the new issue in the database, saving mediaUrls as JSON
+    const newIssue = await prisma.issue.create({
       data: {
         title,
         description,
-        reporterId: reporter.id,
-        latitude: Number.isFinite(latitude) ? latitude : null,
-        longitude: Number.isFinite(longitude) ? longitude : null,
-        mediaUrls: mediaUrls.length ? mediaUrls : null,
-        // status defaults to "Pending" per schema
+        latitude: lat,
+        longitude: lon,
+        location: locationName, // Store the human-readable address
+        status: "Pending",
+        category: category,
+        reporterId: parseInt(token.sub, 10) || null,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : null,
       },
     });
 
-    return NextResponse.json({ message: "Issue created", issue: created }, { status: 201 });
-  } catch (error) {
-    console.error("Error creating issue:", error);
+    return NextResponse.json(newIssue, {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("Error creating issue:", err);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to submit issue" },
-      { status: 500 }
+      { error: "Internal Server Error", details: err.message },
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
