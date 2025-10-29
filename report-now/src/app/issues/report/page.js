@@ -4,6 +4,16 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "/images/map-pin.png",
+  iconUrl: "/images/map-pin.png",
+  shadowUrl: "/images/marker-shadow.png",
+});
 
 // shadcn/ui
 import {
@@ -369,13 +379,30 @@ export default function ReportIssuePage() {
                 </FieldDescription>
   
                 <div className="mt-1 grid gap-2">
-                  <div className="flex h-28 items-center justify-center rounded border border-border bg-gray-50 text-sm text-muted">
+                  <div className="h-28 overflow-hidden rounded border border-border bg-gray-50">
                     {lat != null && lng != null ? (
-                      <p className="text-foreground">
-                        GPS Enabled: Lat {lat.toFixed(4)}, Lng {lng.toFixed(4)}
-                      </p>
+                      <MapContainer
+                        key={`${lat}-${lng}`}
+                        center={[lat, lng]}
+                        zoom={16}
+                        minZoom={16}
+                        maxZoom={16}
+                        style={{ height: "100%", width: "100%" }}
+                        dragging={false}
+                        touchZoom={false}
+                        doubleClickZoom={false}
+                        scrollWheelZoom={false}
+                        boxZoom={false}
+                        keyboard={false}
+                        zoomControl={false}
+                      >
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <Marker position={[lat, lng]} />
+                      </MapContainer>
                     ) : (
-                      <p>Enable GPS to select on the map</p>
+                      <div className="flex h-full items-center justify-center text-sm text-muted">
+                        <p>Enable GPS to select on the map</p>
+                      </div>
                     )}
                   </div>
   
@@ -383,9 +410,26 @@ export default function ReportIssuePage() {
                     <Button
                       type="button"
                       onClick={handleEnableGPS}
-                      className="btn btn-outline"
+                      className="btn btn-outline w-10 h-10 !p-0.5"
                     >
-                      Enable GPS
+                    <svg 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      stroke="#525252" 
+                      className="w-6 h-6"
+                    >
+                      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g> 
+                      <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round" ></g>
+                      <g id="SVGRepo_iconCarrier">
+                        <path 
+                          fillRule="evenodd" 
+                          clipRule="evenodd" 
+                          d="M11 2a1 1 0 0 1 2 0v2.062A8.004 8.004 0 0 1 19.938 11H22a1 1 0 0 1 0 2h-2.062A8.004 8.004 0 0 1 13 19.938V22a1 1 0 0 1-2 0v-2.062A8.004 8.004 0 0 1 4.062 13H2a1 1 0 0 1 0-2h2.062A8.004 8.004 0 0 1 11 4.062V2zm7 10a6 6 0 1 0-12 0 6 6 0 0 0 12 0zm-3 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" 
+                          fill="#525252">
+                        </path>
+                      </g>
+                    </svg>
                     </Button>
                     {lat != null && lng != null && (
                       <Button
