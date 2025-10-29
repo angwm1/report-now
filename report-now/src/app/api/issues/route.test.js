@@ -41,6 +41,10 @@ jest.mock("../../../lib/actions", () => ({
   categorize: jest.fn(),
 }));
 
+jest.mock("../../../lib/duplicate-detection", () => ({
+  checkAndMarkDuplicate: jest.fn(),
+}));
+
 // --- End of Mocks ---
 
 // Import dependencies and the functions under test.
@@ -48,6 +52,7 @@ import { GET, POST } from "./route"; // Adjust relative path if needed.
 import { getToken } from "next-auth/jwt";
 import cloudinary from "cloudinary";
 import { categorize } from "../../../lib/actions";
+import { checkAndMarkDuplicate } from "../../../lib/duplicate-detection";
 
 // Helper: Create a fake Request for formData-based POST requests.
 function createRequestWithFormData(formDataObj) {
@@ -117,6 +122,8 @@ describe("POST /api/issues", () => {
 
     // Reset our categorize mock.
     categorize.mockReset();
+    checkAndMarkDuplicate.mockReset();
+    checkAndMarkDuplicate.mockResolvedValue(null);
   });
 
   test("returns 401 Unauthorized if token is missing", async () => {
@@ -214,6 +221,7 @@ describe("POST /api/issues", () => {
         mediaUrls: null,
       },
     });
+    expect(checkAndMarkDuplicate).toHaveBeenCalledWith(fakeIssue.id);
   });
 
   test("handles file uploads and reverse geocoding", async () => {
@@ -282,6 +290,7 @@ describe("POST /api/issues", () => {
       requestData.description,
       expect.arrayContaining(["https://cloudinary.com/dummyurl"])
     );
+    expect(checkAndMarkDuplicate).toHaveBeenCalledWith(fakeIssue.id);
 
     global.fetch = originalFetch;
   });
