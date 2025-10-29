@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -48,6 +48,7 @@ function normalizeUserId(raw) {
 
 export default function IssueDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
 
   const [issue, setIssue] = useState(null);
@@ -57,6 +58,8 @@ export default function IssueDetailPage() {
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [upvoteIds, setUpvoteIds] = useState([]);
   const [isVoting, setIsVoting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // Fetch issue details from API
   useEffect(() => {
@@ -116,6 +119,44 @@ export default function IssueDetailPage() {
     refreshIssue();
   }, [params.id]);
 
+  const handleDeleteIssue = useCallback(async () => {
+    if (!issue) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this issue? This action cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleteError("");
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/issues/${params.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        const message = error?.error || "Failed to delete issue.";
+        setDeleteError(message);
+        return;
+      }
+
+      router.push("/issues");
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting issue:", error);
+      setDeleteError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [issue, params.id, router]);
+
   // Function to navigate between media items
   const navigateMedia = (index) => {
     setActiveMediaIndex(index);
@@ -163,6 +204,10 @@ export default function IssueDetailPage() {
   const hasUpvoted = userId != null && upvoteIds.includes(userId);
   const canVote = isVotingAllowed && userId != null;
   const voteCount = upvoteIds.length;
+  const isReporter = userId != null && issue.reporterId === userId;
+  const duplicateIssueId = issue.duplicateId ?? issue.duplicateOf?.id ?? null;
+  const duplicateIssueTitle = issue.duplicateOf?.title ?? "";
+  const duplicateReason = issue.duplicateReason;
 
   const handleVote = async () => {
     if (!canVote || isVoting) {
@@ -249,23 +294,61 @@ export default function IssueDetailPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="text-2xl font-bold">{issue.title}</h1>
-        <div className="flex items-center space-x-2">
-          <span className="text-lg font-semibold text-gray-700">
-            {voteCount}
-          </span>
-          <button
-            type="button"
-            onClick={handleVote}
-            disabled={!canVote || isVoting}
-            className={voteButtonClasses}
-            aria-label="Toggle upvote for issue"
-          >
-            <FaArrowUp />
-          </button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-lg font-semibold text-gray-700">
+              {voteCount}
+            </span>
+            <button
+              type="button"
+              onClick={handleVote}
+              disabled={!canVote || isVoting}
+              className={voteButtonClasses}
+              aria-label="Toggle upvote for issue"
+            >
+              <FaArrowUp />
+            </button>
+            {isReporter && (
+            <>
+              <button
+                type="button"
+                onClick={handleDeleteIssue}
+                disabled={isDeleting}
+                className="flex items-center justify-center rounded bg-red-500 px-3 py-1 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete Issue"}
+              </button>
+              {deleteError && (
+                <p className="max-w-xs text-right text-xs text-red-600">
+                  {deleteError}
+                </p>
+              )}
+            </>
+          )}
+          </div>
         </div>
       </div>
+
+      {duplicateIssueId && (
+        <div className="rounded border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900">
+          <p>
+            This issue may be a duplicate of{" "}
+            <Link
+              href={`/issues/${duplicateIssueId}`}
+              className="font-semibold underline"
+            >
+              Issue #{duplicateIssueId}
+              {duplicateIssueTitle ? `: ${duplicateIssueTitle}` : ""}
+            </Link>
+            .
+          </p>
+          {duplicateReason && (
+            <p className="mt-1 text-xs text-yellow-800">{duplicateReason}</p>
+          )}
+        </div>
+      )}
 
       <p className="text-gray-600">{issue.description}</p>
 

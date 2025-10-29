@@ -12,7 +12,14 @@ export async function GET(request, context) {
 
   const issue = await prisma.issue.findUnique({
     where: { id: parseInt(id, 10) },
-    include: { 
+    include: {
+      duplicateOf: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        },
+      },
       reviews: {
         include: {
           user: {
@@ -173,4 +180,76 @@ export async function PATCH(request, context) {
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(request, context) {
+  const params = await context.params;
+  const { id } = params;
+  const issueId = Number.parseInt(id, 10);
+
+  if (!Number.isInteger(issueId)) {
+    return NextResponse.json(
+      { error: "Invalid issue identifier" },
+      { status: 400 },
+    );
+  }
+
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  if (!token) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  const userId = Number.parseInt(token.sub, 10);
+  if (!Number.isInteger(userId)) {
+    return NextResponse.json(
+      { error: "Invalid user identifier" },
+      { status: 400 },
+    );
+  }
+
+  const issue = await prisma.issue.findUnique({
+    where: { id: issueId },
+    select: { reporterId: true },
+  });
+
+  if (!issue) {
+    return NextResponse.json(
+      { error: "Issue not found" },
+      { status: 404 },
+    );
+  }
+
+  if (issue.reporterId !== userId) {
+    return NextResponse.json(
+      { error: "Forbidden" },
+      { status: 403 },
+    );
+  }
+
+  await prisma.issue.updateMany({
+    where: { duplicateId: issueId },
+    data: {
+      duplicateId: null,
+      duplicateReason: null,
+    },
+  });
+
+  await prisma.issue.delete({
+    where: { id: issueId },
+  });
+
+  return NextResponse.json(
+    { success: true },
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 }
