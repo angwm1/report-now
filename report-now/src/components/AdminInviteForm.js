@@ -49,7 +49,7 @@ export default function AdminInviteForm() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
+          className="bg-primary text-white p-2 rounded hover:bg-primary-hover transition"
         >
           {loading ? 'Sending...' : 'Send Invitation'}
         </button>
