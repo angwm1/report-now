@@ -4,7 +4,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { FaVideo } from "react-icons/fa"; // Import video icon
+import { useSession } from "next-auth/react";
+import { FaVideo, FaArrowUp } from "react-icons/fa"; // Import icons for media and voting
 
 // Simple Haversine formula for distance in KM
 function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -20,8 +21,43 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return R * c; // in kilometers
 }
 
+function normalizeIdList(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const numericValues = raw
+    .map((value) => {
+      if (typeof value === "number") {
+        return value;
+      }
+      if (typeof value === "string") {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isNaN(parsed) ? null : parsed;
+      }
+      return null;
+    })
+    .filter((value) => typeof value === "number" && Number.isInteger(value));
+
+  return Array.from(new Set(numericValues));
+}
+
+function normalizeUserId(raw) {
+  if (typeof raw === "number" && Number.isInteger(raw)) {
+    return raw;
+  }
+
+  if (typeof raw === "string") {
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
 export default function IssueCard({ issue }) {
   const router = useRouter();
+  const { data: session } = useSession();
   // We assume issue has { mediaUrls?: string[], mediaTypes?: string[], latitude?: number, longitude?: number, ... }
 
   // We track the user's location in state
@@ -30,6 +66,8 @@ export default function IssueCard({ issue }) {
   const [distanceKM, setDistanceKM] = useState(null);
   // Track if the media is a video
   const [isVideo, setIsVideo] = useState(false);
+  const [upvoteIds, setUpvoteIds] = useState(() => normalizeIdList(issue.upvotes));
+  const [isVoting, setIsVoting] = useState(false);
 
   // Attempt to get user location on mount (only if user grants permission)
   useEffect(() => {
@@ -79,6 +117,10 @@ export default function IssueCard({ issue }) {
     }
   }, [issue.mediaUrls, issue.mediaTypes]);
 
+  useEffect(() => {
+    setUpvoteIds(normalizeIdList(issue.upvotes));
+  }, [issue.upvotes]);
+
   // Use the first media URL or fallback
   const mediaSrc =
     issue.mediaUrls && issue.mediaUrls.length > 0
@@ -106,10 +148,67 @@ export default function IssueCard({ issue }) {
     router.push(`/issues/${issue.id}`);
   };
 
+  const isVotingAllowed =
+    issue.status !== "Done" && issue.status !== "Rejected";
+
+  const userIdRaw = session?.user?.id ?? null;
+  const userId = normalizeUserId(userIdRaw);
+  const hasUpvoted = userId != null && upvoteIds.includes(userId);
+  const canVote = isVotingAllowed && userId != null;
+  const voteCount = upvoteIds.length;
+
+  const handleVote = async () => {
+    if (!canVote || isVoting) {
+      return;
+    }
+
+    setIsVoting(true);
+    try {
+      const response = await fetch(`/api/issues/${issue.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vote: "up" }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error("Voting error:", error);
+        return;
+      }
+
+      const updatedIssue = await response.json();
+      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
+    } catch (error) {
+      console.error("Error submitting vote:", error);
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  const voteButtonClasses = `p-2 rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed ${
+    hasUpvoted
+      ? "bg-red-500 border-red-600 text-white hover:bg-red-600"
+      : "border-gray-300 text-gray-600 hover:bg-gray-100"
+  }`;
+
   return (
-    <div className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-center">
+    <div className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-stretch md:h-50">
+      <div className="mr-4 mb-2 flex items-center justify-center md:flex-col md:justify-center w-fill space-x-4 md:space-x-0 md:space-y-2">
+        <button
+          type="button"
+          onClick={handleVote}
+          disabled={!canVote || isVoting}
+          className={voteButtonClasses}
+          aria-label="Toggle upvote for issue"
+        >
+          <FaArrowUp />
+        </button>
+        <span className="text-lg font-semibold text-gray-700">{voteCount}</span>
+      </div>
       {/* Left side: Image or Video */} 
-      <div className="md:w-1/3 mb-4 md:mb-0 md:mr-4 relative h-32">
+      <div className="relative mb-4 md:mb-0 md:mr-4 md:w-1/3 h-40 md:h-auto overflow-hidden">
         {isVideo ? (
           <div className="flex items-center justify-center bg-gray-200 rounded h-full">
             <FaVideo className="text-gray-500 text-4xl" />
@@ -120,17 +219,17 @@ export default function IssueCard({ issue }) {
             alt={issue.title}
             fill
             priority={true}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 768px) 100vw, 30vw"
             className="object-cover rounded"
           />
         )}
       </div>
 
       {/* Right side: Title, location, status, distance */}
-      <div className="flex-grow">
+      <div className="flex-grow content-between h-full">
         <h2 className="text-lg font-bold text-gray-800">{issue.title}</h2>
         <p className="text-sm text-gray-500">
-          Location: {issue.location || "Unknown"}
+          {issue.description || "Unknown"}
         </p>
 
         <div className="flex items-center justify-between mt-2">
@@ -157,7 +256,7 @@ export default function IssueCard({ issue }) {
           {/* Distance & Date */}
           <div className="text-sm text-gray-500">
             {distanceKM ? `${distanceKM} km` : "Locating..."}
-            <span className="mx-1">•</span> {formattedDate}
+            <span className="mx-1">|</span> {formattedDate}
           </div>
         </div>
         

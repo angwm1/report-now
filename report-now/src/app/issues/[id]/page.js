@@ -10,7 +10,41 @@ import TimelineSection from "@/components/TimelineSection";
 // import EditStatusForm from "@/components/EditStatusForm";
 import LeaveReviewForm from "@/components/LeaveReviewForm";
 import ReviewCard from "@/components/ReviewCard";
-import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { FaStar, FaStarHalfAlt, FaRegStar, FaArrowUp } from "react-icons/fa";
+
+function normalizeIdList(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const numericValues = raw
+    .map((value) => {
+      if (typeof value === "number") {
+        return value;
+      }
+      if (typeof value === "string") {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isNaN(parsed) ? null : parsed;
+      }
+      return null;
+    })
+    .filter((value) => typeof value === "number" && Number.isInteger(value));
+
+  return Array.from(new Set(numericValues));
+}
+
+function normalizeUserId(raw) {
+  if (typeof raw === "number" && Number.isInteger(raw)) {
+    return raw;
+  }
+
+  if (typeof raw === "string") {
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) ? parsed : null;
+  }
+
+  return null;
+}
 
 export default function IssueDetailPage() {
   const params = useParams();
@@ -21,6 +55,8 @@ export default function IssueDetailPage() {
   const [fetchError, setFetchError] = useState("");
   const [editingStatus, setEditingStatus] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [upvoteIds, setUpvoteIds] = useState([]);
+  const [isVoting, setIsVoting] = useState(false);
 
   // Fetch issue details from API
   useEffect(() => {
@@ -32,6 +68,7 @@ export default function IssueDetailPage() {
         const data = await res.json();
         console.log("Fetched issue data:", data);
         setIssue(data);
+        setUpvoteIds(normalizeIdList(data.upvotes));
       } catch (err) {
         console.error("Error fetching issue:", err);
         setFetchError(err.message);
@@ -46,6 +83,7 @@ export default function IssueDetailPage() {
   const handleStatusUpdate = useCallback(
     (updatedIssue) => {
       setIssue(updatedIssue);
+      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
       setEditingStatus(false);
     },
     []
@@ -55,6 +93,7 @@ export default function IssueDetailPage() {
   const handleTimelineUpdate = useCallback(
     (updatedIssue) => {
       setIssue(updatedIssue);
+      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
     },
     []
   );
@@ -69,6 +108,7 @@ export default function IssueDetailPage() {
         const data = await res.json();
         console.log("Refreshed issue data:", data);
         setIssue(data);
+        setUpvoteIds(normalizeIdList(data.upvotes));
       } catch (err) {
         console.error("Error refreshing issue:", err);
       }
@@ -116,6 +156,51 @@ export default function IssueDetailPage() {
     );
   }
 
+  const userIdRaw = session?.user?.id ?? null;
+  const userId = normalizeUserId(userIdRaw);
+  const isVotingAllowed =
+    issue.status !== "Done" && issue.status !== "Rejected";
+  const hasUpvoted = userId != null && upvoteIds.includes(userId);
+  const canVote = isVotingAllowed && userId != null;
+  const voteCount = upvoteIds.length;
+
+  const handleVote = async () => {
+    if (!canVote || isVoting) {
+      return;
+    }
+
+    setIsVoting(true);
+    try {
+      const response = await fetch(`/api/issues/${issue.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vote: "up" }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error("Voting error:", error);
+        return;
+      }
+
+      const updatedIssue = await response.json();
+      setIssue(updatedIssue);
+      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
+    } catch (error) {
+      console.error("Error submitting vote:", error);
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  const voteButtonClasses = `p-2 rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed ${
+    hasUpvoted
+      ? "bg-red-500 border-red-600 text-white hover:bg-red-600"
+      : "border-gray-300 text-gray-600 hover:bg-gray-100"
+  }`;
+
   // Check if current citizen user has already left a review
   const userHasReviewed =
     session &&
@@ -124,11 +209,11 @@ export default function IssueDetailPage() {
     issue.reviews.some((review) => review.userId === session.user.id);
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6">
+    <div className="max-w-2xl mx-auto p-10 space-y-6 bg-white rounded-sm">
       {/* Media Section - Images Only */}
       {issue.mediaUrls && issue.mediaUrls.length > 0 && (
         <div className="space-y-2">
-          <div className="relative h-64 w-full rounded overflow-hidden bg-gray-100">
+          <div className="relative h-84 w-full rounded overflow-hidden bg-gray-100">
             <Image
               src={issue.mediaUrls[activeMediaIndex]}
               alt={issue.title}
@@ -164,7 +249,23 @@ export default function IssueDetailPage() {
         </div>
       )}
 
-      <h1 className="text-2xl font-bold">{issue.title}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{issue.title}</h1>
+        <div className="flex items-center space-x-2">
+          <span className="text-lg font-semibold text-gray-700">
+            {voteCount}
+          </span>
+          <button
+            type="button"
+            onClick={handleVote}
+            disabled={!canVote || isVoting}
+            className={voteButtonClasses}
+            aria-label="Toggle upvote for issue"
+          >
+            <FaArrowUp />
+          </button>
+        </div>
+      </div>
 
       <p className="text-gray-600">{issue.description}</p>
 

@@ -1,6 +1,7 @@
 // File: /src/app/api/issues/[id]/route.js
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 const prisma = new PrismaClient();
 
@@ -60,6 +61,75 @@ export async function PATCH(request, context) {
   
   try {
     const body = await request.json();
+
+    if (typeof body.vote === "string") {
+      const direction = body.vote.toLowerCase();
+      if (direction !== "up") {
+        return NextResponse.json(
+          { error: "Invalid vote direction" },
+          { status: 400 }
+        );
+      }
+
+      const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
+
+      if (!token) {
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+
+      const userId = Number.parseInt(token.sub, 10);
+      if (!Number.isInteger(userId)) {
+        return NextResponse.json(
+          { error: "Invalid user identifier" },
+          { status: 400 }
+        );
+      }
+
+      const issueRecord = await prisma.issue.findUnique({
+        where: { id: parseInt(id, 10) },
+        select: { status: true, upvotes: true },
+      });
+
+      if (!issueRecord) {
+        return NextResponse.json(
+          { error: "Issue not found" },
+          { status: 404 }
+        );
+      }
+
+      if (["Done", "Rejected"].includes(issueRecord.status)) {
+        return NextResponse.json(
+          { error: "Voting is not allowed for completed issues" },
+          { status: 400 }
+        );
+      }
+
+      const currentUpvotes = Array.isArray(issueRecord.upvotes)
+        ? issueRecord.upvotes
+        : [];
+      const alreadyUpvoted = currentUpvotes.includes(userId);
+      const updatedUpvotes = alreadyUpvoted
+        ? currentUpvotes.filter((uid) => uid !== userId)
+        : [...currentUpvotes, userId];
+
+      const normalizedUpvotes = Array.from(new Set(updatedUpvotes));
+
+      const updatedIssue = await prisma.issue.update({
+        where: { id: parseInt(id, 10) },
+        data: {
+          upvotes: {
+            set: normalizedUpvotes,
+          },
+        },
+      });
+      return NextResponse.json(updatedIssue, { status: 200 });
+    }
 
     // If a timeline update is provided, append it to the timeline array
     if (body.timelineUpdate) {
