@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import TimelineSection from "@/components/TimelineSection";
-// import EditStatusForm from "@/components/EditStatusForm";
+import EditStatusForm from "@/components/EditStatusForm";
 import LeaveReviewForm from "@/components/LeaveReviewForm";
 import ReviewCard from "@/components/ReviewCard";
 import { FaStar, FaStarHalfAlt, FaRegStar, FaArrowUp } from "react-icons/fa";
