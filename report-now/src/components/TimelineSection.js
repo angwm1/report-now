@@ -35,6 +35,7 @@ export default function TimelineSection({ issueId, currentTimeline, onTimelineUp
 
   return (
     <div className="mt-6 border-t pt-4">
+      {/*
       <h3 className="text-xl font-bold mb-2">Timeline Updates</h3>
       {currentTimeline && currentTimeline.length > 0 ? (
         <ul className="space-y-2">
@@ -50,18 +51,19 @@ export default function TimelineSection({ issueId, currentTimeline, onTimelineUp
       ) : (
         <p className="text-gray-600 text-sm">No timeline updates yet.</p>
       )}
+      */}
       <div className="mt-4">
         <textarea
           value={newUpdate}
           onChange={(e) => setNewUpdate(e.target.value)}
           placeholder="Enter a new timeline update..."
           rows={3}
-          className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+          className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-primary-400 transition"
         />
         <button
           onClick={handleAddUpdate}
           disabled={loading}
-          className="mt-2 w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition disabled:opacity-50"
+          className="mt-2 w-full bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600 transition disabled:opacity-50"
         >
           {loading ? "Adding update..." : "Add Update"}
         </button>

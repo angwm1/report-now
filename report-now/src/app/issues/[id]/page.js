@@ -232,7 +232,7 @@ export default function IssueDetailPage() {
                   onClick={() => navigateMedia(idx)}
                   className={`relative h-16 w-16 flex-shrink-0 cursor-pointer rounded overflow-hidden border-2 ${
                     idx === activeMediaIndex
-                      ? "border-blue-500"
+                      ? "border-primary-500"
                       : "border-transparent"
                   }`}
                 >
@@ -284,7 +284,7 @@ export default function IssueDetailPage() {
           !editingStatus && (
             <button
               onClick={() => setEditingStatus(true)}
-              className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
+              className="bg-primary-500 text-white px-2 py-1 rounded hover:bg-primary-600 transition"
             >
               Edit
             </button>
