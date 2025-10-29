@@ -26,6 +26,7 @@ model Issue {
   title       String
   description String
   status      String   @default("Pending")
+  upvotes     Int[]    @default([])
   timeline    Json?
   category    String?
   latitude    Float?

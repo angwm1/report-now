@@ -130,7 +130,7 @@ export const categorize = async (title, description, imageUrls) => {
 
     // Request the classification from the OpenAI model
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages,
     });
 

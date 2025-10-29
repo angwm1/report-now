@@ -116,6 +116,13 @@ export default function IssuesPage() {
           result.sort((a, b) => (a?.distance || Infinity) - (b?.distance || Infinity));
         }
         break;
+      case 'upvotes':
+        result.sort((a, b) => {
+          const aVotes = Array.isArray(a?.upvotes) ? a.upvotes.length : 0;
+          const bVotes = Array.isArray(b?.upvotes) ? b.upvotes.length : 0;
+          return bVotes - aVotes;
+        });
+        break;
       case 'random':
         // Fisher-Yates (Knuth) shuffle algorithm
         for (let i = result.length - 1; i > 0; i--) {

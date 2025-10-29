@@ -10,10 +10,15 @@ jest.mock("@prisma/client", () => {
   return { PrismaClient: jest.fn(() => ({ issue })) };
 });
 
+jest.mock("next-auth/jwt", () => ({
+  getToken: jest.fn(),
+}));
+
 // --- End of Mocks ---
 
 // Import the functions under test.
 import { GET, PATCH } from "./route"; // Adjust relative path if needed.
+import { getToken } from "next-auth/jwt";
 
 // Helper: Create a fake Request object that supports .json()
 function createRequest(body) {
@@ -84,6 +89,123 @@ describe("PATCH /api/issues/[id]", () => {
     prismaIssue = new PrismaClient().issue;
     prismaIssue.findUnique.mockReset();
     prismaIssue.update.mockReset();
+    getToken.mockReset();
+  });
+
+  test("adds current user to upvotes when not yet upvoted", async () => {
+    getToken.mockResolvedValue({ sub: "1" });
+    prismaIssue.findUnique.mockResolvedValue({ status: "In Progress", upvotes: [] });
+    prismaIssue.update.mockResolvedValue({ id: 1, upvotes: [1], status: "In Progress" });
+
+    const request = createRequest({ vote: "up" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(200);
+
+    const data = await getResponseData(response);
+    expect(data.upvotes).toEqual([1]);
+    expect(prismaIssue.findUnique).toHaveBeenCalledWith({
+      where: { id: 1 },
+      select: { status: true, upvotes: true },
+    });
+    expect(prismaIssue.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { upvotes: { set: [1] } },
+    });
+  });
+
+  test("removes current user from upvotes when already upvoted", async () => {
+    getToken.mockResolvedValue({ sub: "1" });
+    prismaIssue.findUnique.mockResolvedValue({ status: "Pending", upvotes: [1, 2] });
+    prismaIssue.update.mockResolvedValue({ id: 1, upvotes: [2], status: "Pending" });
+
+    const request = createRequest({ vote: "up" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(200);
+
+    const data = await getResponseData(response);
+    expect(data.upvotes).toEqual([2]);
+    expect(prismaIssue.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { upvotes: { set: [2] } },
+    });
+  });
+
+  test("returns 401 when user is not authenticated", async () => {
+    getToken.mockResolvedValue(null);
+
+    const request = createRequest({ vote: "up" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(401);
+
+    expect(getToken).toHaveBeenCalled();
+    expect(prismaIssue.findUnique).not.toHaveBeenCalled();
+    expect(prismaIssue.update).not.toHaveBeenCalled();
+  });
+
+  test("returns 400 when user identifier cannot be parsed", async () => {
+    getToken.mockResolvedValue({ sub: "not-a-number" });
+
+    const request = createRequest({ vote: "up" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(400);
+
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Invalid user identifier");
+    expect(getToken).toHaveBeenCalled();
+    expect(prismaIssue.findUnique).not.toHaveBeenCalled();
+  });
+
+  test("returns 400 when vote direction is invalid", async () => {
+    const request = createRequest({ vote: "sideways" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(400);
+
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Invalid vote direction");
+    expect(getToken).not.toHaveBeenCalled();
+    expect(prismaIssue.update).not.toHaveBeenCalled();
+  });
+
+  test("returns 404 when voting on non-existent issue", async () => {
+    getToken.mockResolvedValue({ sub: "1" });
+    prismaIssue.findUnique.mockResolvedValue(null);
+
+    const request = createRequest({ vote: "up" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(404);
+
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Issue not found");
+    expect(getToken).toHaveBeenCalled();
+    expect(prismaIssue.findUnique).toHaveBeenCalledWith({
+      where: { id: 1 },
+      select: { status: true, upvotes: true },
+    });
+    expect(prismaIssue.update).not.toHaveBeenCalled();
+  });
+
+  test("blocks voting when issue is Done or Rejected", async () => {
+    getToken.mockResolvedValue({ sub: "1" });
+    prismaIssue.findUnique.mockResolvedValue({ status: "Done", upvotes: [] });
+
+    const request = createRequest({ vote: "up" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(400);
+
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Voting is not allowed for completed issues");
+    expect(prismaIssue.findUnique).toHaveBeenCalledWith({
+      where: { id: 1 },
+      select: { status: true, upvotes: true },
+    });
+    expect(prismaIssue.update).not.toHaveBeenCalled();
   });
 
   test("updates timeline when timelineUpdate is provided", async () => {

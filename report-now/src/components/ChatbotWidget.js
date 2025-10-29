@@ -79,7 +79,7 @@ export default function ChatbotWidget() {
       {isOpen && (
         <div className="fixed bottom-16 right-4 w-80 max-w-full bg-white shadow-lg rounded-lg flex flex-col">
           {/* Header */}
-          <div className="bg-blue-500 text-white p-3 flex justify-between items-center rounded-t-lg">
+          <div className="bg-red-500 text-white p-3 flex justify-between items-center rounded-t-lg">
             <span className="font-bold">GovBot Chat</span>
             <button onClick={toggleChat} aria-label="Close chat" className="focus:outline-none">
               <FaTimes />
@@ -93,7 +93,7 @@ export default function ChatbotWidget() {
                 className={`mb-2 p-2 rounded ${
                   msg.role === "assistant"
                     ? "bg-gray-100 text-gray-800"
-                    : "bg-blue-500 text-white self-end"
+                    : "bg-red-500 text-white self-end"
                 }`}
               >
                 {msg.content}
@@ -120,7 +120,7 @@ export default function ChatbotWidget() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-all focus:outline-none"
+              className="bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-all focus:outline-none"
               aria-label="Send message"
             >
               Send
@@ -132,7 +132,7 @@ export default function ChatbotWidget() {
       {/* Floating Icon */}
       <button
         onClick={toggleChat}
-        className="fixed bottom-4 right-4 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 focus:outline-none"
+        className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-full shadow-lg hover:bg-red-600 focus:outline-none"
         aria-label="Open chat"
       >
         <FaComments size={24} />

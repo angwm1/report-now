@@ -82,7 +82,7 @@ export default function LeaveReviewForm({ issueId, onReviewSubmit }) {
       <button
         onClick={handleReviewSubmit}
         disabled={loading}
-        className="mt-2 w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition disabled:opacity-50"
+        className="mt-2 w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition disabled:opacity-50"
       >
         {loading ? "Submitting Review..." : "Submit Review"}
       </button>

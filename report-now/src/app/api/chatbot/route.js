@@ -37,9 +37,9 @@ Answer questions clearly, accurately, and concisely.`,
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-5-mini",
         messages,
-        temperature: 0.7,
+        temperature: 1,
       }),
     });
 
