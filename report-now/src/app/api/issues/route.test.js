@@ -182,6 +182,7 @@ describe("POST /api/issues", () => {
       location: null,
       status: "Pending",
       category: "Test Category",
+      upvotes: [],
       reporterId: 1,
       mediaUrls: null,
     };
@@ -208,6 +209,7 @@ describe("POST /api/issues", () => {
         location: null,
         status: "Pending",
         category: "Test Category",
+        upvotes: [],
         reporterId: 1,
         mediaUrls: null,
       },
@@ -250,6 +252,7 @@ describe("POST /api/issues", () => {
       location: "Test Location Name",
       status: "Pending",
       category: "File Category",
+      upvotes: [],
       reporterId: 1,
       mediaUrls: ["https://cloudinary.com/dummyurl"],
     };

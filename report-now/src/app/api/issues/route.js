@@ -142,6 +142,7 @@ export async function POST(request) {
         location: locationName, // Store the human-readable address
         status: "Pending",
         category: category,
+        upvotes: [],
         reporterId: parseInt(token.sub, 10) || null,
         mediaUrls: mediaUrls.length > 0 ? mediaUrls : null,
       },
