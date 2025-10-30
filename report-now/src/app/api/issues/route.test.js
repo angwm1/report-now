@@ -124,6 +124,13 @@ describe("POST /api/issues", () => {
     categorize.mockReset();
     checkAndMarkDuplicate.mockReset();
     checkAndMarkDuplicate.mockResolvedValue(null);
+
+    jest.spyOn(global, "setTimeout").mockImplementation((callback, ms) => {
+      if (typeof callback === "function") {
+        callback();
+      }
+      return 0;
+    });
   });
 
   test("returns 401 Unauthorized if token is missing", async () => {
