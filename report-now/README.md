@@ -34,13 +34,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Duplicate Detection Setup
-
-Duplicate detection for new issues relies on a single OpenAI chat request that compares the freshly submitted report against prior issues. Configure the following environment variables in `.env`:
-
-- `OPENAI_API_KEY` - required for all OpenAI requests.
-- `ENABLE_DUPLICATE_DETECTION` - set to `false` to disable (defaults to enabled).
-- `DUPLICATE_MODEL` - optional, defaults to `gpt-5-mini`.
-
-After pulling the latest schema changes, run `npx prisma migrate dev` to create the `duplicateId` and `duplicateReason` columns in your database.

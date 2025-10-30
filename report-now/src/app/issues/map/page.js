@@ -8,6 +8,12 @@ export default async function MapPage() {
  const issues = await res.json();
 
  return (
-    <MapWrapper issues={issues} />
+   <div className="min-h-screen flex flex-col bg-gray-50 p-4">
+     <h1 className="text-2xl font-bold mb-4">Incidents Nearby</h1>
+     <p className="text-sm text-gray-500 mb-4">Showing {issues.length} results</p>
+     <div className="flex-grow">
+       <MapWrapper issues={issues} />
+     </div>
+   </div>
  );
 }

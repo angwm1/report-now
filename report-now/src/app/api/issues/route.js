@@ -5,7 +5,6 @@ import { getToken } from "next-auth/jwt";
 import cloudinary from "cloudinary";
 import streamifier from "streamifier";
 import { categorize } from "../../../lib/actions";
-import { checkAndMarkDuplicate } from "../../../lib/duplicate-detection";
 
 // Configure Cloudinary
 cloudinary.v2.config({
@@ -149,34 +148,7 @@ export async function POST(request) {
       },
     });
 
-    const detectionPromise = checkAndMarkDuplicate(newIssue.id).catch(
-      (error) => {
-        console.error("Duplicate detection failed:", error);
-        return null;
-      },
-    );
-
-    const timeoutPromise = new Promise((resolve) =>
-      setTimeout(() => resolve("timeout"), 5000),
-    );
-
-    const detectionResult = await Promise.race([
-      detectionPromise,
-      timeoutPromise,
-    ]);
-
-    let issueResponse = newIssue;
-
-    if (detectionResult && detectionResult !== "timeout") {
-      const updatedIssue = await prisma.issue.findUnique({
-        where: { id: newIssue.id },
-      });
-      if (updatedIssue) {
-        issueResponse = updatedIssue;
-      }
-    }
-
-    return NextResponse.json(issueResponse, {
+    return NextResponse.json(newIssue, {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
