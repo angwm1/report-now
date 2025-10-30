@@ -193,81 +193,99 @@ export default function IssueCard({ issue }) {
       : "border-gray-300 text-gray-600 hover:bg-gray-100"
   }`;
 
+  const cardClasses =
+    "group relative flex flex-col gap-4 rounded-xl border border-slate-200/80 bg-white/70 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 cursor-pointer";
+
+  const handleCardKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-stretch md:h-50">
-      <div className="mr-4 mb-2 flex items-center justify-center md:flex-col md:justify-center w-fill space-x-4 md:space-x-0 md:space-y-2">
-        <button
-          type="button"
-          onClick={handleVote}
-          disabled={!canVote || isVoting}
-          className={voteButtonClasses}
-          aria-label="Toggle upvote for issue"
-        >
-          <FaArrowUp />
-        </button>
-        <span className="text-lg font-semibold text-gray-700">{voteCount}</span>
-      </div>
-      {/* Left side: Image or Video */} 
-      <div className="relative mb-4 md:mb-0 md:mr-4 md:w-1/3 h-40 md:h-auto overflow-hidden">
-        {isVideo ? (
-          <div className="flex items-center justify-center bg-gray-200 rounded h-full">
-            <FaVideo className="text-gray-500 text-4xl" />
-          </div>
-        ) : (
-          <Image
-            src={mediaSrc}
-            alt={issue.title}
-            fill
-            priority={true}
-            sizes="(max-width: 768px) 100vw, 30vw"
-            className="object-cover rounded"
-          />
-        )}
-      </div>
-
-      {/* Right side: Title, location, status, distance */}
-      <div className="flex-grow content-between h-full">
-        <h2 className="text-lg font-bold text-gray-800">{issue.title}</h2>
-        <p className="text-sm text-gray-500">
-          {issue.description || "Unknown"}
-        </p>
-
-        <div className="flex items-center justify-between mt-2">
-          {/* Status label with colored dot */}
-          <div
-            className={`text-xs font-medium px-2 py-1 rounded flex items-center ${
-              issue.status === "Done"
-                ? "bg-green-100 text-green-800"
-                : issue.status === "In Progress"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-gray-100 text-gray-800"
-            }`}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={handleCardKeyDown}
+      className={cardClasses}
+    >
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
+        <div className="flex items-center gap-4 md:flex-col md:items-center md:gap-3">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              handleVote();
+            }}
+            disabled={!canVote || isVoting}
+            className={voteButtonClasses}
+            aria-label="Toggle upvote for issue"
           >
-            <span className={`w-2 h-2 rounded-full mr-1.5 ${
-              issue.status === "Done"
-                ? "bg-green-500"
-                : issue.status === "In Progress"
-                ? "bg-yellow-500"
-                : "bg-gray-500"
-            }`}></span>
-            {issue.status}
-          </div>
-
-          {/* Distance & Date */}
-          <div className="text-sm text-gray-500">
-            {distanceKM ? `${distanceKM} km` : "Locating..."}
-            <span className="mx-1">|</span> {formattedDate}
-          </div>
-        </div>
-        
-        {/* View details button - right aligned */}
-        <div className="flex justify-end mt-2">
-          <button 
-            onClick={handleClick}
-            className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition"
-          >
-            View Details
+            <FaArrowUp />
           </button>
+          <span className="text-lg font-semibold text-gray-700">{voteCount}</span>
+        </div>
+        {/* Left side: Image or Video */}
+        <div className="relative flex h-40 w-full overflow-hidden rounded-lg bg-gray-100 md:h-40 md:w-48">
+          {isVideo ? (
+            <div className="flex w-full items-center justify-center rounded-lg bg-gray-200">
+              <FaVideo className="text-3xl text-gray-500" />
+            </div>
+          ) : (
+            <Image
+              src={mediaSrc}
+              alt={issue.title}
+              fill
+              priority={true}
+              sizes="(max-width: 768px) 100vw, 200px"
+              className="object-cover transition duration-200 group-hover:scale-105"
+            />
+          )}
+        </div>
+        {/* Right side: Title, location, status, distance */}
+        <div className="flex flex-1 flex-col justify-between gap-3">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="text-base font-semibold text-gray-900 transition-colors group-hover:text-gray-950">
+                {issue.title}
+              </h1>
+              {/* Distance & Date */}
+              <div className="text-xs font-medium text-gray-500 md:text-right">
+                {distanceKM ? `${distanceKM} km` : "Locating..."}
+                <span className="mx-1 text-gray-300">•</span>
+                {formattedDate}
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-gray-600 line-clamp-3">
+              {issue.description || "Unknown"}
+            </p>
+          </div>
+          <div className="flex items-center justify-between">
+            {/* Status label with colored dot */}
+            <div
+              className={`text-xs font-medium px-2 py-1 rounded flex items-center ${
+                issue.status === "Done"
+                  ? "bg-green-100 text-green-800"
+                  : issue.status === "In Progress"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full mr-1.5 ${
+                  issue.status === "Done"
+                    ? "bg-green-500"
+                    : issue.status === "In Progress"
+                    ? "bg-yellow-500"
+                    : "bg-gray-500"
+                }`}
+              ></span>
+              {issue.status}
+            </div>
+          </div>
         </div>
       </div>
     </div>
