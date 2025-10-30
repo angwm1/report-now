@@ -44,17 +44,20 @@ async function uploadFile(file) {
 async function reverseGeocodeOSM(lat, lon) {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "ReportNow/1.0 (contact@ntu.edu.sg)", // must be valid email or domain
+        "Accept-Language": "en",
+      },
+    });
     if (!res.ok) {
       throw new Error(`Nominatim error: ${res.status} ${res.statusText}`);
     }
     const data = await res.json();
-    // data.display_name often contains a human-readable address
-    // If not found, fallback to "Unknown location"
     return data.display_name || "Unknown location";
   } catch (err) {
     console.error("Reverse geocoding error:", err);
-    return null; // fallback
+    return "Unknown location";
   }
 }
 
