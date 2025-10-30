@@ -1,19 +1,23 @@
 // File: /src/app/issues/report/page.js
 "use client";
 
-import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "/images/map-pin.png",
-  iconUrl: "/images/map-pin.png",
-  shadowUrl: "/images/marker-shadow.png",
-});
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
 
 // shadcn/ui
 import {
@@ -32,6 +36,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 export default function ReportIssuePage() {
+  useEffect(() => {
+    (async () => {
+      const L = await import("leaflet");
+      await import("leaflet/dist/leaflet.css");
+
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: "/images/map-pin.png",
+        iconUrl: "/images/map-pin.png",
+        shadowUrl: "/images/marker-shadow.png",
+      });
+    })();
+  }, []);
+  
   // Form fields
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -203,7 +221,10 @@ export default function ReportIssuePage() {
       }
       files.forEach((file) => formData.append("media", file));
 
-      const res = await fetch("/api/issues", { method: "POST", body: formData });
+      const res = await fetch("/api/issues", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -235,7 +256,7 @@ export default function ReportIssuePage() {
             <FieldLegend className="text-xl font-semibold text-left mb-2">
               Report Issue
             </FieldLegend>
-  
+
             {/* Top messages */}
             <FieldGroup>
               {hasError && (
@@ -249,7 +270,7 @@ export default function ReportIssuePage() {
                 </Field>
               )}
             </FieldGroup>
-  
+
             {/* Media */}
             <FieldGroup>
               <Field>
@@ -257,7 +278,7 @@ export default function ReportIssuePage() {
                 <FieldDescription>
                   Tap or drag &amp; drop photos. Max size: 100MB each.
                 </FieldDescription>
-  
+
                 {/* Dropzone */}
                 <div
                   onDragOver={handleDragOver}
@@ -281,14 +302,14 @@ export default function ReportIssuePage() {
                   First image becomes the main preview.
                 </FieldDescription>
               </Field>
-  
+
               {previews.length > 0 && (
                 <Field>
                   <FieldLabel>Preview &amp; Order</FieldLabel>
                   <FieldDescription>
                     Drag to reorder. Click × to remove.
                   </FieldDescription>
-  
+
                   <div className="mt-1 grid grid-cols-3 gap-2">
                     {previews.map(({ file, preview }, idx) => (
                       <div
@@ -335,9 +356,9 @@ export default function ReportIssuePage() {
                 </Field>
               )}
             </FieldGroup>
-  
+
             <FieldSeparator />
-  
+
             {/* Details */}
             <FieldGroup>
               <Field>
@@ -352,7 +373,7 @@ export default function ReportIssuePage() {
                   aria-invalid={hasError && !title ? true : undefined}
                 />
               </Field>
-  
+
               <Field>
                 <FieldLabel htmlFor="description">Description</FieldLabel>
                 <Textarea
@@ -367,9 +388,9 @@ export default function ReportIssuePage() {
                 />
               </Field>
             </FieldGroup>
-  
+
             <FieldSeparator />
-  
+
             {/* Location */}
             <FieldGroup>
               <Field>
@@ -377,7 +398,7 @@ export default function ReportIssuePage() {
                 <FieldDescription>
                   Use GPS to attach coordinates to this report.
                 </FieldDescription>
-  
+
                 <div className="mt-1 grid gap-2">
                   <div className="h-28 overflow-hidden rounded border border-border bg-gray-50">
                     {lat != null && lng != null ? (
@@ -405,31 +426,35 @@ export default function ReportIssuePage() {
                       </div>
                     )}
                   </div>
-  
+
                   <div className="flex gap-2">
                     <Button
                       type="button"
                       onClick={handleEnableGPS}
-                      className="btn btn-outline w-10 h-10 !p-0.5"
+                      className="btn btn-outline w-10 h-10 p-0.5!"
                     >
-                    <svg 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      stroke="#525252" 
-                      className="w-6 h-6"
-                    >
-                      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g> 
-                      <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round" ></g>
-                      <g id="SVGRepo_iconCarrier">
-                        <path 
-                          fillRule="evenodd" 
-                          clipRule="evenodd" 
-                          d="M11 2a1 1 0 0 1 2 0v2.062A8.004 8.004 0 0 1 19.938 11H22a1 1 0 0 1 0 2h-2.062A8.004 8.004 0 0 1 13 19.938V22a1 1 0 0 1-2 0v-2.062A8.004 8.004 0 0 1 4.062 13H2a1 1 0 0 1 0-2h2.062A8.004 8.004 0 0 1 11 4.062V2zm7 10a6 6 0 1 0-12 0 6 6 0 0 0 12 0zm-3 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" 
-                          fill="#525252">
-                        </path>
-                      </g>
-                    </svg>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        stroke="#525252"
+                        className="w-6 h-6"
+                      >
+                        <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                        <g
+                          id="SVGRepo_tracerCarrier"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></g>
+                        <g id="SVGRepo_iconCarrier">
+                          <path
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                            d="M11 2a1 1 0 0 1 2 0v2.062A8.004 8.004 0 0 1 19.938 11H22a1 1 0 0 1 0 2h-2.062A8.004 8.004 0 0 1 13 19.938V22a1 1 0 0 1-2 0v-2.062A8.004 8.004 0 0 1 4.062 13H2a1 1 0 0 1 0-2h2.062A8.004 8.004 0 0 1 11 4.062V2zm7 10a6 6 0 1 0-12 0 6 6 0 0 0 12 0zm-3 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"
+                            fill="#525252"
+                          ></path>
+                        </g>
+                      </svg>
                     </Button>
                     {lat != null && lng != null && (
                       <Button
@@ -447,7 +472,7 @@ export default function ReportIssuePage() {
                 </div>
               </Field>
             </FieldGroup>
-  
+
             {/* Submit */}
             <Field className="space-y-1">
               <Button
@@ -463,5 +488,4 @@ export default function ReportIssuePage() {
       </div>
     </div>
   );
-  
 }

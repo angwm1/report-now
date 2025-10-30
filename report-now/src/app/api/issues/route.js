@@ -16,11 +16,9 @@ cloudinary.v2.config({
 
 const prisma = new PrismaClient();
 
-export const config = {
-  api: {
-    bodyParser: false, // Disable Next.js built-in body parser
-  },
-};
+export const runtime = "nodejs"; 
+export const dynamic = "force-dynamic"; 
+export const bodyParser = false; 
 
 // Helper function to upload a file to Cloudinary
 async function uploadFile(file) {
