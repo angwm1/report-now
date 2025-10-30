@@ -7,8 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "cross-env NODE_ENV=test jest --runInBand",
-    "generate:reports": "python scripts/generate_reports.py"
+    "test": "cross-env NODE_ENV=test jest --runInBand"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
