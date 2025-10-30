@@ -16,9 +16,9 @@ cloudinary.v2.config({
 
 const prisma = new PrismaClient();
 
-export const runtime = "nodejs"; 
-export const dynamic = "force-dynamic"; 
-export const bodyParser = false; 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const bodyParser = false;
 
 // Helper function to upload a file to Cloudinary
 async function uploadFile(file) {
@@ -44,17 +44,20 @@ async function uploadFile(file) {
 async function reverseGeocodeOSM(lat, lon) {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "ReportNow/1.0 (contact@ntu.edu.sg)", // must be valid email or domain
+        "Accept-Language": "en",
+      },
+    });
     if (!res.ok) {
       throw new Error(`Nominatim error: ${res.status} ${res.statusText}`);
     }
     const data = await res.json();
-    // data.display_name often contains a human-readable address
-    // If not found, fallback to "Unknown location"
     return data.display_name || "Unknown location";
   } catch (err) {
     console.error("Reverse geocoding error:", err);
-    return null; // fallback
+    return "Unknown location";
   }
 }
 
@@ -76,7 +79,10 @@ export async function GET() {
 
 export async function POST(request) {
   // Authenticate request using JWT token
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
   if (!token) {
     return NextResponse.json(
       { error: "Unauthorized" },
@@ -87,7 +93,7 @@ export async function POST(request) {
   try {
     // Parse form data from the request
     const formData = await request.formData();
-    
+
     // Extract text fields
     const title = formData.get("title");
     const description = formData.get("description");
@@ -109,7 +115,7 @@ export async function POST(request) {
 
     // Reverse geocode to get a human-readable location (if lat/lon are valid)
     let locationName = null;
-    if (lat && lon) {
+    if (lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon)) {
       locationName = await reverseGeocodeOSM(lat, lon);
     }
 
@@ -151,11 +157,11 @@ export async function POST(request) {
       (error) => {
         console.error("Duplicate detection failed:", error);
         return null;
-      },
+      }
     );
 
     const timeoutPromise = new Promise((resolve) =>
-      setTimeout(() => resolve("timeout"), 5000),
+      setTimeout(() => resolve("timeout"), 5000)
     );
 
     const detectionResult = await Promise.race([

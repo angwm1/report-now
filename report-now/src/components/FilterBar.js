@@ -29,16 +29,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+const DEFAULT_SORT = "upvotes";
+
 const SORT_OPTIONS = [
+  { value: "upvotes", label: "Upvotes" },
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
   { value: "nearest", label: "Nearest" },
-  { value: "upvotes", label: "Upvotes" },
 ];
 
 export default function FilterBar({ onFilter }) {
   const [open, setOpen] = useState(false);
-  const [sort, setSort] = useState("newest");
+  const [sort, setSort] = useState(DEFAULT_SORT);
   const [status, setStatus] = useState("all");
   const [category, setCategory] = useState("all");
   const [agencyOpen, setAgencyOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function FilterBar({ onFilter }) {
     () => agencies.find((a) => a.id === category),
     [category]
   );
-  const sortIsActive = sort !== "newest";
+  const sortIsActive = sort !== DEFAULT_SORT;
 
   const emitFilters = useCallback(
     (overrides = {}) => {
@@ -95,7 +97,7 @@ export default function FilterBar({ onFilter }) {
   const resetFilters = useCallback(() => {
     setStatus("all");
     setCategory("all");
-    setSort("newest");
+    setSort(DEFAULT_SORT);
     setOpen(false);
     setAgencyOpen(false);
     setSortOpen(false);
@@ -149,14 +151,14 @@ export default function FilterBar({ onFilter }) {
         </Button>
 
         {open && (
-          <div className="absolute left-0 z-10 mt-2 w-120 rounded border bg-white p-4 shadow-lg">
+          <div className="absolute left-0 z-10 mt-2 w-120 rounded-xl bg-white p-4 shadow-xl">
             <fieldset className="mb-4">
               <legend className="font-medium">Agency</legend>
               <Popover open={agencyOpen} onOpenChange={setAgencyOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded border px-3 py-2 text-left"
+                    className="flex w-full items-center justify-between rounded-xl bg-gray-100 px-3 py-2 text-left cursor-pointer"
                     aria-label="Select agency"
                   >
                     <span className="truncate">
@@ -231,7 +233,12 @@ export default function FilterBar({ onFilter }) {
 
             <fieldset className="mb-4">
               <legend className="font-medium">Status</legend>
-              {["All", "Pending", "In Progress", "Done"].map((value) => (
+              {[
+                { value: "all", label: "All" },
+                { value: "Pending", label: "Pending" },
+                { value: "In Progress", label: "In Progress" },
+                { value: "Done", label: "Done" },
+              ].map(({ value, label }) => (
                 <label key={value} className="block">
                   <input
                     type="radio"
@@ -239,7 +246,7 @@ export default function FilterBar({ onFilter }) {
                     onChange={() => setStatus(value)}
                     className="mr-2"
                   />
-                  {value}
+                  {label}
                 </label>
               ))}
             </fieldset>
@@ -281,7 +288,7 @@ export default function FilterBar({ onFilter }) {
         </Button>
 
         {sortOpen && (
-          <div className="absolute left-0 z-10 mt-2 w-56 rounded border bg-white p-3 shadow-lg">
+          <div className="absolute left-0 z-10 mt-2 w-56 rounded-xl bg-white p-3 shadow-xl">
             <fieldset>
               <legend className="mb-2 text-sm font-medium text-gray-700">
                 Sort By
@@ -313,4 +320,3 @@ export default function FilterBar({ onFilter }) {
 FilterBar.propTypes = {
   onFilter: PropTypes.func.isRequired,
 };
-

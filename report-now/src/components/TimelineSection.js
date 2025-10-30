@@ -34,7 +34,7 @@ export default function TimelineSection({ issueId, currentTimeline, onTimelineUp
   };
 
   return (
-    <div className="mt-6 border-t pt-4">
+    <div className="mt-6 pt-4">
       {/*
       <h3 className="text-xl font-bold mb-2">Timeline Updates</h3>
       {currentTimeline && currentTimeline.length > 0 ? (
@@ -52,6 +52,7 @@ export default function TimelineSection({ issueId, currentTimeline, onTimelineUp
         <p className="text-gray-600 text-sm">No timeline updates yet.</p>
       )}
       */}
+      <div class="h-px w-full bg-slate-200"></div>
       <div className="mt-4">
         <textarea
           value={newUpdate}

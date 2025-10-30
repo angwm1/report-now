@@ -352,7 +352,8 @@ export default function IssueDetailPage() {
 
       <p className="text-gray-600">{issue.description}</p>
 
-      {/* Rest of your component remains the same */}
+      {/* Location, Status, Date */}
+      <div class="h-px w-full bg-slate-200 my-6"></div>
       <div className="flex items-center space-x-2">
         <span className="font-semibold">Location:</span>
         <p>{issue.location || "Unknown"}</p>
@@ -393,6 +394,8 @@ export default function IssueDetailPage() {
           <p>{issue.latestUpdate}</p>
         </div>
       )}
+
+      <div class="h-px w-full bg-slate-200 my-6"></div>
 
       {/* Timeline Update Section */}
       <div className="mt-6">

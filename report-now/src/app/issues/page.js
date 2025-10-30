@@ -7,6 +7,8 @@ import IssueCard from "../../components/IssueCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import Link from "next/link";
 
+const DEFAULT_SORT = "upvotes";
+
 export default function IssuesPage() {
   const [issues, setIssues] = useState([]);
   const [filteredIssues, setFilteredIssues] = useState([]);
@@ -38,8 +40,9 @@ export default function IssuesPage() {
       .then((data) => {
         // Ensure data is valid
         const validData = Array.isArray(data) ? data : [];
+        const defaultSorted = sortIssues(validData, DEFAULT_SORT);
         setIssues(validData);
-        setFilteredIssues(validData);
+        setFilteredIssues(defaultSorted);
         setLoading(false);
       })
       .catch((error) => {
@@ -67,16 +70,73 @@ export default function IssuesPage() {
     return R * c; // in kilometers
   }
 
+  function sortIssues(list, sortType = DEFAULT_SORT) {
+    const sortKey = sortType || DEFAULT_SORT;
+    const result = [...list].filter((issue) => issue != null);
+
+    switch (sortKey) {
+      case "newest":
+        return result.sort(
+          (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)
+        );
+      case "oldest":
+        return result.sort(
+          (a, b) => new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0)
+        );
+      case "nearest":
+        if (
+          userLocation &&
+          userLocation.lat != null &&
+          userLocation.lng != null
+        ) {
+          return result
+            .map((issue) => {
+              if (issue?.latitude == null || issue?.longitude == null) {
+                return { ...issue, distance: Infinity };
+              }
+              const distance = haversineDistance(
+                userLocation.lat,
+                userLocation.lng,
+                issue.latitude,
+                issue.longitude
+              );
+              return { ...issue, distance };
+            })
+            .sort(
+              (a, b) =>
+                (a?.distance ?? Infinity) - (b?.distance ?? Infinity)
+            );
+        }
+        return result;
+      case "upvotes":
+        return result.sort((a, b) => {
+          const aVotes = Array.isArray(a?.upvotes) ? a.upvotes.length : 0;
+          const bVotes = Array.isArray(b?.upvotes) ? b.upvotes.length : 0;
+          return bVotes - aVotes;
+        });
+      case "random": {
+        const shuffled = [...result];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      }
+      default:
+        return sortIssues(result, DEFAULT_SORT);
+    }
+  }
+
   // Handle filtering and sorting
   function handleFilter(filterObj) {
     if (!filterObj) {
-      // If no filter, show all issues
-      setFilteredIssues([...issues]);
+      // If no filter, show issues sorted by default preference
+      setFilteredIssues(sortIssues(issues, DEFAULT_SORT));
       return;
     }
 
     // First filter by status and category
-    let result = [...issues].filter(issue => issue != null); // Ensure all items are valid
+    let result = [...issues].filter((issue) => issue != null); // Ensure all items are valid
     
     // Filter by status
     if (filterObj.status) {
@@ -89,53 +149,7 @@ export default function IssuesPage() {
                                        issue.categoryId === filterObj.category);
     }
 
-    // Then sort
-    switch (filterObj.sort) {
-      case 'newest':
-        result.sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0));
-        break;
-      case 'oldest':
-        result.sort((a, b) => new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0));
-        break;
-      case 'nearest':
-        if (userLocation && userLocation.lat != null && userLocation.lng != null) {
-          // Add distance property
-          result.forEach(issue => {
-            if (issue && issue.latitude != null && issue.longitude != null) {
-              issue.distance = haversineDistance(
-                userLocation.lat, 
-                userLocation.lng, 
-                issue.latitude, 
-                issue.longitude
-              );
-            } else {
-              issue.distance = Infinity; // Places without location info last
-            }
-          });
-          // Sort by distance
-          result.sort((a, b) => (a?.distance || Infinity) - (b?.distance || Infinity));
-        }
-        break;
-      case 'upvotes':
-        result.sort((a, b) => {
-          const aVotes = Array.isArray(a?.upvotes) ? a.upvotes.length : 0;
-          const bVotes = Array.isArray(b?.upvotes) ? b.upvotes.length : 0;
-          return bVotes - aVotes;
-        });
-        break;
-      case 'random':
-        // Fisher-Yates (Knuth) shuffle algorithm
-        for (let i = result.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [result[i], result[j]] = [result[j], result[i]];
-        }
-        break;
-      default:
-        // Default sort by newest
-        result.sort((a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0));
-    }
-
-    setFilteredIssues(result);
+    setFilteredIssues(sortIssues(result, filterObj.sort));
   }
 
   return (
