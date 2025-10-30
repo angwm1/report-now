@@ -2,6 +2,7 @@
 import "../styles/globals.css";
 import SessionProviderWrapper from "../components/SessionProviderWrapper";
 import ClientNavFooter from "../components/ClientNavFooter";
+import ChatbotWidget from "../components/ChatbotWidget";
 
 export const metadata = {
   title: "Report Service",
@@ -16,6 +17,7 @@ export default function RootLayout({ children }) {
           {/* ClientNavFooter is a client component that conditionally renders NavBar/Footer */}
           <ClientNavFooter>
             {children}
+            <ChatbotWidget />
           </ClientNavFooter>
         </SessionProviderWrapper>
       </body>

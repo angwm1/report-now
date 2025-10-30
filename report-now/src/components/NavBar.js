@@ -56,7 +56,7 @@ export default function NavBar() {
   };
 
   return (
-    <nav className="bg-transparent text-[color:var(--color-foreground)] py-2  ">
+    <nav className="bg-transparent text-[color:var(--color-foreground)] py-2 z-999">
       <div className="mx-auto w-full max-w-[840px] rounded-full border border-white/30 bg-white/80 backdrop-blur-md shadow-sm">
         <div className="flex h-14 items-center px-3 sm:px-4">
           <Link

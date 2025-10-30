@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,10 +10,45 @@ import TimelineSection from "@/components/TimelineSection";
 import EditStatusForm from "@/components/EditStatusForm";
 import LeaveReviewForm from "@/components/LeaveReviewForm";
 import ReviewCard from "@/components/ReviewCard";
-import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
+import { FaStar, FaStarHalfAlt, FaRegStar, FaArrowUp } from "react-icons/fa";
+
+function normalizeIdList(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const numericValues = raw
+    .map((value) => {
+      if (typeof value === "number") {
+        return value;
+      }
+      if (typeof value === "string") {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isNaN(parsed) ? null : parsed;
+      }
+      return null;
+    })
+    .filter((value) => typeof value === "number" && Number.isInteger(value));
+
+  return Array.from(new Set(numericValues));
+}
+
+function normalizeUserId(raw) {
+  if (typeof raw === "number" && Number.isInteger(raw)) {
+    return raw;
+  }
+
+  if (typeof raw === "string") {
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isInteger(parsed) ? parsed : null;
+  }
+
+  return null;
+}
 
 export default function IssueDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
 
   const [issue, setIssue] = useState(null);
@@ -21,6 +56,10 @@ export default function IssueDetailPage() {
   const [fetchError, setFetchError] = useState("");
   const [editingStatus, setEditingStatus] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [upvoteIds, setUpvoteIds] = useState([]);
+  const [isVoting, setIsVoting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // Fetch issue details from API
   useEffect(() => {
@@ -32,6 +71,7 @@ export default function IssueDetailPage() {
         const data = await res.json();
         console.log("Fetched issue data:", data);
         setIssue(data);
+        setUpvoteIds(normalizeIdList(data.upvotes));
       } catch (err) {
         console.error("Error fetching issue:", err);
         setFetchError(err.message);
@@ -46,6 +86,7 @@ export default function IssueDetailPage() {
   const handleStatusUpdate = useCallback(
     (updatedIssue) => {
       setIssue(updatedIssue);
+      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
       setEditingStatus(false);
     },
     []
@@ -55,6 +96,7 @@ export default function IssueDetailPage() {
   const handleTimelineUpdate = useCallback(
     (updatedIssue) => {
       setIssue(updatedIssue);
+      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
     },
     []
   );
@@ -69,12 +111,51 @@ export default function IssueDetailPage() {
         const data = await res.json();
         console.log("Refreshed issue data:", data);
         setIssue(data);
+        setUpvoteIds(normalizeIdList(data.upvotes));
       } catch (err) {
         console.error("Error refreshing issue:", err);
       }
     };
     refreshIssue();
   }, [params.id]);
+
+  const handleDeleteIssue = useCallback(async () => {
+    if (!issue) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this issue? This action cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleteError("");
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/issues/${params.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        const message = error?.error || "Failed to delete issue.";
+        setDeleteError(message);
+        return;
+      }
+
+      router.push("/issues");
+      router.refresh();
+    } catch (error) {
+      console.error("Error deleting issue:", error);
+      setDeleteError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [issue, params.id, router]);
 
   // Function to navigate between media items
   const navigateMedia = (index) => {
@@ -116,6 +197,55 @@ export default function IssueDetailPage() {
     );
   }
 
+  const userIdRaw = session?.user?.id ?? null;
+  const userId = normalizeUserId(userIdRaw);
+  const isVotingAllowed =
+    issue.status !== "Done" && issue.status !== "Rejected";
+  const hasUpvoted = userId != null && upvoteIds.includes(userId);
+  const canVote = isVotingAllowed && userId != null;
+  const voteCount = upvoteIds.length;
+  const isReporter = userId != null && issue.reporterId === userId;
+  const duplicateIssueId = issue.duplicateId ?? issue.duplicateOf?.id ?? null;
+  const duplicateIssueTitle = issue.duplicateOf?.title ?? "";
+  const duplicateReason = issue.duplicateReason;
+
+  const handleVote = async () => {
+    if (!canVote || isVoting) {
+      return;
+    }
+
+    setIsVoting(true);
+    try {
+      const response = await fetch(`/api/issues/${issue.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vote: "up" }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error("Voting error:", error);
+        return;
+      }
+
+      const updatedIssue = await response.json();
+      setIssue(updatedIssue);
+      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
+    } catch (error) {
+      console.error("Error submitting vote:", error);
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  const voteButtonClasses = `p-2 rounded-full border transition disabled:opacity-50 disabled:cursor-not-allowed ${
+    hasUpvoted
+      ? "bg-red-500 border-red-600 text-white hover:bg-red-600"
+      : "border-gray-300 text-gray-600 hover:bg-gray-100"
+  }`;
+
   // Check if current citizen user has already left a review
   const userHasReviewed =
     session &&
@@ -124,11 +254,11 @@ export default function IssueDetailPage() {
     issue.reviews.some((review) => review.userId === session.user.id);
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6">
+    <div className="max-w-2xl mx-auto p-10 space-y-6 bg-white rounded-sm">
       {/* Media Section - Images Only */}
       {issue.mediaUrls && issue.mediaUrls.length > 0 && (
         <div className="space-y-2">
-          <div className="relative h-64 w-full rounded overflow-hidden bg-gray-100">
+          <div className="relative h-84 w-full rounded overflow-hidden bg-gray-100">
             <Image
               src={issue.mediaUrls[activeMediaIndex]}
               alt={issue.title}
@@ -147,7 +277,7 @@ export default function IssueDetailPage() {
                   onClick={() => navigateMedia(idx)}
                   className={`relative h-16 w-16 flex-shrink-0 cursor-pointer rounded overflow-hidden border-2 ${
                     idx === activeMediaIndex
-                      ? "border-blue-500"
+                      ? "border-primary-500"
                       : "border-transparent"
                   }`}
                 >
@@ -164,7 +294,61 @@ export default function IssueDetailPage() {
         </div>
       )}
 
-      <h1 className="text-2xl font-bold">{issue.title}</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <h1 className="text-2xl font-bold">{issue.title}</h1>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center space-x-2">
+            <span className="text-lg font-semibold text-gray-700">
+              {voteCount}
+            </span>
+            <button
+              type="button"
+              onClick={handleVote}
+              disabled={!canVote || isVoting}
+              className={voteButtonClasses}
+              aria-label="Toggle upvote for issue"
+            >
+              <FaArrowUp />
+            </button>
+            {isReporter && (
+            <>
+              <button
+                type="button"
+                onClick={handleDeleteIssue}
+                disabled={isDeleting}
+                className="flex items-center justify-center rounded bg-red-500 px-3 py-1 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete Issue"}
+              </button>
+              {deleteError && (
+                <p className="max-w-xs text-right text-xs text-red-600">
+                  {deleteError}
+                </p>
+              )}
+            </>
+          )}
+          </div>
+        </div>
+      </div>
+
+      {duplicateIssueId && (
+        <div className="rounded border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900">
+          <p>
+            This issue may be a duplicate of{" "}
+            <Link
+              href={`/issues/${duplicateIssueId}`}
+              className="font-semibold underline"
+            >
+              Issue #{duplicateIssueId}
+              {duplicateIssueTitle ? `: ${duplicateIssueTitle}` : ""}
+            </Link>
+            .
+          </p>
+          {duplicateReason && (
+            <p className="mt-1 text-xs text-yellow-800">{duplicateReason}</p>
+          )}
+        </div>
+      )}
 
       <p className="text-gray-600">{issue.description}</p>
 
@@ -183,7 +367,7 @@ export default function IssueDetailPage() {
           !editingStatus && (
             <button
               onClick={() => setEditingStatus(true)}
-              className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
+              className="bg-primary-500 text-white px-2 py-1 rounded hover:bg-primary-600 transition"
             >
               Edit
             </button>
