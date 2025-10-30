@@ -1,1 +1,1 @@
-# 3040-TEL5-UU test hosting
+# 3040-TEL5-UU
