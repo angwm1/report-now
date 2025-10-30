@@ -36,13 +36,9 @@ model Issue {
   reporterId  Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  duplicateId Int?
-  duplicateReason String?
 
-  reporter    User           @relation(fields: [reporterId], references: [id])
+  reporter    User     @relation(fields: [reporterId], references: [id])
   reviews     Review[]
-  duplicateOf Issue?         @relation("IssueDuplicates", fields: [duplicateId], references: [id])
-  duplicates  Issue[]        @relation("IssueDuplicates")
 }
 
 model Review {
@@ -54,7 +50,7 @@ model Review {
   userName  String?
   createdAt DateTime @default(now())
 
-  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  issue     Issue    @relation(fields: [issueId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 }
 
