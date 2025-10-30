@@ -1,0 +1,4 @@
+ignoredBuiltDependencies:
+  - '@prisma/client'
+  - sharp
+  - unrs-resolver
