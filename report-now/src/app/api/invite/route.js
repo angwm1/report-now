@@ -31,10 +31,11 @@ function isValidEmail(email) {
  */
 function createTransporter() {
   return nodemailer.createTransport({
-    service: "gmail",
+    host: "sandbox.smtp.mailtrap.io",
+    port: 2525,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 }
@@ -45,8 +46,7 @@ function createTransporter() {
  * @returns {string} The full invitation URL.
  */
 function buildInviteLink(inviteToken) {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   return `${baseUrl}/register?invite=${inviteToken}`;
 }
 
