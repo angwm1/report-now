@@ -284,9 +284,9 @@ describe("POST /api/issues", () => {
     expect(data).toEqual(fakeIssue);
 
     // Verify that reverse geocoding was called with a URL containing "lat=12.34".
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining("lat=12.34")
-    );
+    expect(global.fetch).toHaveBeenCalled();
+    const [fetchUrl] = global.fetch.mock.calls[0];
+    expect(fetchUrl).toEqual(expect.stringContaining("lat=12.34"));
 
     // Verify that Cloudinary uploader was called.
     expect(cloudinary.v2.uploader.upload_stream).toHaveBeenCalled();
