@@ -1,2 +1,2 @@
 # 3040-TEL5-UU
-Some of your Lab 3 documents are not in .pdf format...
+Chatbot API key removed to save money
