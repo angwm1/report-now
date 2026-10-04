@@ -2,13 +2,14 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaSpinner } from "react-icons/fa";
 
 export default function LoginCard() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,13 +30,69 @@ export default function LoginCard() {
     if (result?.error) {
       setError(result.error);
     } else {
-      const session = await getSession();
-      if (session && session.user && session.user.role === "admin") {
-        router.push("/superAdmin/dashboard");
-      } else {
-        router.push("/issues");
-      }
+      router.push("/issues");
     }
+  }
+
+  if (status === "authenticated" && session?.user) {
+    const displayName = session.user.name || session.user.email || "Member";
+    const initial = displayName.charAt(0).toUpperCase();
+
+    return (
+      <div className="bg-white w-full p-8 rounded-xl shadow-lg border border-gray-100">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-12 w-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">
+            {initial}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-gray-900 truncate">
+              Welcome, {displayName}!
+            </h2>
+            <p className="text-xs text-gray-500 truncate">
+              {session.user.email}
+            </p>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-5">
+          You are signed in. Quick access to community reporting services:
+        </p>
+
+        <div className="flex flex-col space-y-2.5">
+          <Link
+            href="/issues"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium text-center text-sm shadow-xs transition-colors"
+          >
+            Browse Community Issues
+          </Link>
+          <Link
+            href="/issues/report"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-medium text-center text-sm shadow-xs transition-colors"
+          >
+            + Report New Incident
+          </Link>
+          <Link
+            href="/issues/my"
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-lg font-medium text-center text-sm transition-colors"
+          >
+            My Submitted Issues
+          </Link>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500">
+          <Link href="/account" className="hover:text-blue-600 hover:underline">
+            Manage Account
+          </Link>
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="text-red-500 hover:text-red-700 hover:underline cursor-pointer"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
