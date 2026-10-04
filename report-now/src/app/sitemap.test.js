@@ -12,7 +12,7 @@ describe("sitemap metadata generator", () => {
     const entries = sitemap();
 
     expect(Array.isArray(entries)).toBe(true);
-    expect(entries).toHaveLength(5);
+    expect(entries).toHaveLength(7);
 
     const urls = entries.map((e) => e.url);
     expect(urls).toContain("https://report-now.vercel.app");
@@ -20,6 +20,8 @@ describe("sitemap metadata generator", () => {
     expect(urls).toContain("https://report-now.vercel.app/issues/map");
     expect(urls).toContain("https://report-now.vercel.app/issues/report");
     expect(urls).toContain("https://report-now.vercel.app/reviews");
+    expect(urls).toContain("https://report-now.vercel.app/register");
+    expect(urls).toContain("https://report-now.vercel.app/forgot-password");
 
     entries.forEach((entry) => {
       expect(entry.lastModified).toBeInstanceOf(Date);
@@ -36,5 +38,7 @@ describe("sitemap metadata generator", () => {
 
     expect(entries[0].url).toBe("https://custom-domain.org");
     expect(entries[1].url).toBe("https://custom-domain.org/issues");
+    expect(entries[5].url).toBe("https://custom-domain.org/register");
+    expect(entries[6].url).toBe("https://custom-domain.org/forgot-password");
   });
 });
