@@ -5,6 +5,9 @@ import dynamic from "next/dynamic";
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
@@ -36,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 export default function ReportIssuePage() {
+  const { status } = useSession();
   useEffect(() => {
     (async () => {
       const L = await import("leaflet");
@@ -105,8 +109,8 @@ export default function ReportIssuePage() {
       try {
         const preview = await createPreview(file);
         nextPreviews.push({ file, preview });
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // Skip preview if reading fails
       }
     }
 
@@ -135,8 +139,8 @@ export default function ReportIssuePage() {
       try {
         const preview = await createPreview(file);
         nextPreviews.push({ file, preview });
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // Skip preview if reading fails
       }
     }
 
@@ -199,8 +203,7 @@ export default function ReportIssuePage() {
         setLat(pos.coords.latitude);
         setLng(pos.coords.longitude);
       },
-      (err) => {
-        console.error("Geolocation error:", err);
+      () => {
         setError("Unable to retrieve your location. Please check device permissions.");
       }
     );
@@ -235,7 +238,6 @@ export default function ReportIssuePage() {
       setSuccess("Issue reported successfully!");
       setTimeout(() => router.push("/issues"), 1200);
     } catch (err) {
-      console.error(err);
       setError(
         err instanceof Error
           ? err.message
@@ -244,6 +246,58 @@ export default function ReportIssuePage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (status === "loading") {
+    return (
+      <div
+        className="container-page flex flex-col items-center justify-center min-h-[50vh] px-4"
+        role="status"
+        aria-live="polite"
+      >
+        <LoadingSpinner size="large" label="Loading report form..." />
+        <p className="mt-4 text-sm font-medium text-gray-500">
+          Loading report form...
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="container-page flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 mb-4">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Sign In Required
+          </h2>
+          <p className="text-sm text-gray-600 mb-6 max-w-sm mx-auto">
+            Please sign in to your account to report community issues, attach photos, and receive status updates.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            Go to Sign In
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const hasError = Boolean(error);
@@ -371,6 +425,7 @@ export default function ReportIssuePage() {
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="E.g. Fire Alert in Punggol"
                   required
+                  minLength={3}
                   aria-invalid={hasError && !title ? true : undefined}
                 />
               </Field>
@@ -384,6 +439,7 @@ export default function ReportIssuePage() {
                   placeholder="Provide details about the incident..."
                   rows={4}
                   required
+                  minLength={5}
                   aria-invalid={hasError && !description ? true : undefined}
                   className="resize-y"
                 />

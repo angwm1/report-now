@@ -26,8 +26,8 @@ export default function IssuesPage() {
             lng: pos.coords.longitude,
           });
         },
-        (err) => {
-          console.error("Geolocation error:", err);
+        () => {
+          // Gracefully continue without user geolocation if permission denied or unavailable
         }
       );
     }
@@ -56,7 +56,6 @@ export default function IssuesPage() {
         }
       } catch (err) {
         if (isSubscribed) {
-          console.error("Error fetching issues:", err);
           setError(
             err instanceof Error ? err.message : "Unable to load issues."
           );

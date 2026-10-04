@@ -124,8 +124,20 @@ export default function FilterBar({ onFilter }) {
       }
     };
 
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        setAgencyOpen(false);
+        setSortOpen(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   return (
@@ -232,32 +244,38 @@ export default function FilterBar({ onFilter }) {
             </fieldset>
 
             <fieldset className="mb-4">
-              <legend className="font-medium">Status</legend>
+              <legend className="font-medium text-sm text-gray-700 mb-2">Status</legend>
               {[
                 { value: "all", label: "All" },
                 { value: "Pending", label: "Pending" },
                 { value: "In Progress", label: "In Progress" },
                 { value: "Done", label: "Done" },
               ].map(({ value, label }) => (
-                <label key={value} className="block">
+                <label key={value} className="flex items-center gap-2 py-1 text-sm text-gray-700 cursor-pointer">
                   <input
                     type="radio"
+                    name="filter-status"
                     checked={status === value}
                     onChange={() => setStatus(value)}
-                    className="mr-2"
+                    className="text-primary-500 focus:ring-primary-500"
                   />
-                  {label}
+                  <span>{label}</span>
                 </label>
               ))}
             </fieldset>
 
-            <div className="flex justify-between">
-              <button onClick={resetFilters} className="text-gray-600">
+            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer font-medium"
+              >
                 Reset All
               </button>
               <button
+                type="button"
                 onClick={applyFilters}
-                className="rounded bg-primary-500 px-4 py-1 text-white"
+                className="rounded bg-primary-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-600 cursor-pointer"
               >
                 Apply
               </button>
@@ -301,6 +319,7 @@ export default function FilterBar({ onFilter }) {
                   >
                     <input
                       type="radio"
+                      name="filter-sort"
                       checked={sort === option.value}
                       onChange={() => handleSortSelect(option.value)}
                       className="mr-2"

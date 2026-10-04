@@ -56,10 +56,9 @@ function RegisterContent() {
         const data = await res.json();
         setError(data.error || "Registration failed");
       }
-    } catch (err) {
+    } catch {
       setLoading(false);
-      console.error("Registration error:", err);
-      setError("An unexpected error occurred.");
+      setError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -136,13 +135,14 @@ function RegisterContent() {
               id="register-password"
               type="password"
               required
+              minLength={6}
               autoComplete="new-password"
               value={formData.password}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
               className="border border-gray-300 p-2.5 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
-              placeholder="Create a strong password"
+              placeholder="At least 6 characters"
             />
           </div>
 
