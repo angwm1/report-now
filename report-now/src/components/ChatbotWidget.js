@@ -70,34 +70,38 @@ export default function ChatbotWidget() {
   return (
     <>
       {isOpen && (
-        <div className="fixed bottom-16 right-4 w-80 max-w-full bg-white shadow-lg rounded-lg flex flex-col">
+        <div className="fixed bottom-16 right-4 w-80 max-w-[calc(100vw-2rem)] bg-white shadow-xl rounded-xl flex flex-col z-50 border border-gray-200">
           {/* Header */}
-          <div className="bg-red-500 text-white p-3 flex justify-between items-center rounded-t-lg">
-            <span className="font-bold">GovBot Chat</span>
-            <button onClick={toggleChat} aria-label="Close chat" className="focus:outline-none">
+          <div className="bg-red-600 text-white p-3.5 flex justify-between items-center rounded-t-xl">
+            <span className="font-bold text-sm">GovBot Assistant</span>
+            <button
+              onClick={toggleChat}
+              aria-label="Close chat"
+              className="p-1 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-white transition cursor-pointer"
+            >
               <FaTimes />
             </button>
           </div>
           {/* Conversation */}
-          <div className="p-3 flex-grow overflow-y-auto max-h-80">
+          <div className="p-3 flex-grow overflow-y-auto max-h-80 text-sm">
             {conversation.map((msg, idx) => (
               <div
                 key={idx}
-                className={`mb-2 p-2 rounded ${
+                className={`mb-2 p-2.5 rounded-lg leading-relaxed ${
                   msg.role === "assistant"
                     ? "bg-gray-100 text-gray-800"
-                    : "bg-red-500 text-white self-end"
+                    : "bg-red-600 text-white self-end ml-8"
                 }`}
               >
                 {msg.content}
               </div>
             ))}
             {loading && (
-              <div className="p-2 rounded bg-gray-100 text-gray-800 flex items-center">
+              <div className="p-2 rounded bg-gray-100 text-gray-800 flex items-center text-xs">
                 <FaSpinner className="animate-spin mr-2" /> Typing...
               </div>
             )}
-            {error && <div className="text-red-500 text-center mt-2">{error}</div>}
+            {error && <div className="text-red-500 text-center mt-2 text-xs">{error}</div>}
             <div ref={conversationEndRef} />
           </div>
           {/* Input */}
@@ -106,14 +110,14 @@ export default function ChatbotWidget() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="Ask GovBot about agencies..."
               aria-label="Chat message input"
-              className="flex-grow p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+              className="flex-grow p-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
             />
             <button
               type="submit"
-              disabled={loading}
-              className="bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-all focus:outline-none"
+              disabled={loading || !input.trim()}
+              className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-50 text-sm cursor-pointer"
               aria-label="Send message"
             >
               Send
@@ -125,10 +129,10 @@ export default function ChatbotWidget() {
       {/* Floating Icon */}
       <button
         onClick={toggleChat}
-        className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-full shadow-lg hover:bg-red-600 focus:outline-none"
+        className="fixed bottom-4 right-4 bg-red-600 text-white p-3.5 rounded-full shadow-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all z-50 cursor-pointer"
         aria-label="Open chat"
       >
-        <FaComments size={24} />
+        <FaComments size={22} />
       </button>
     </>
   );
