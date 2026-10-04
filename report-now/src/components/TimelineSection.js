@@ -1,7 +1,8 @@
 "use client";
+
 import { useState } from "react";
 
-export default function TimelineSection({ issueId, currentTimeline, onTimelineUpdate }) {
+export default function TimelineSection({ issueId, onTimelineUpdate }) {
   const [newUpdate, setNewUpdate] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -14,10 +15,10 @@ export default function TimelineSection({ issueId, currentTimeline, onTimelineUp
       const res = await fetch(`/api/issues/${issueId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ timelineUpdate: newUpdate }),
+        body: JSON.stringify({ timelineUpdate: newUpdate.trim() }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setMessage(`Error: ${data.error || "Failed to add update"}`);
       } else {
         const updatedIssue = await res.json();
@@ -35,41 +36,31 @@ export default function TimelineSection({ issueId, currentTimeline, onTimelineUp
 
   return (
     <div className="mt-6 pt-4">
-      {/*
-      <h3 className="text-xl font-bold mb-2">Timeline Updates</h3>
-      {currentTimeline && currentTimeline.length > 0 ? (
-        <ul className="space-y-2">
-          {currentTimeline.map((update, idx) => (
-            <li key={idx} className="border p-2 rounded">
-              <p className="text-sm">{update.text}</p>
-              <p className="text-xs text-gray-500">
-                {new Date(update.timestamp).toLocaleString()}
-              </p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-600 text-sm">No timeline updates yet.</p>
-      )}
-      */}
-      <div class="h-px w-full bg-slate-200"></div>
+      <div className="h-px w-full bg-slate-200"></div>
       <div className="mt-4">
         <textarea
           value={newUpdate}
           onChange={(e) => setNewUpdate(e.target.value)}
           placeholder="Enter a new timeline update..."
           rows={3}
-          className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-primary-400 transition"
+          aria-label="New timeline update entry"
+          className="w-full border border-gray-300 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-sm"
         />
         <button
+          type="button"
           onClick={handleAddUpdate}
-          disabled={loading}
-          className="mt-2 w-full bg-primary-500 text-white px-4 py-2 rounded hover:bg-primary-600 transition disabled:opacity-50"
+          disabled={loading || !newUpdate.trim()}
+          className="mt-2 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium cursor-pointer"
         >
           {loading ? "Adding update..." : "Add Update"}
         </button>
         {message && (
-          <p className="text-sm text-gray-600 mt-2" role="alert">
+          <p
+            className={`text-sm mt-2 font-medium ${
+              message.startsWith("Error") ? "text-red-600" : "text-green-700"
+            }`}
+            role="alert"
+          >
             {message}
           </p>
         )}

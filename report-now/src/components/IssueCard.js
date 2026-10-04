@@ -7,41 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { FaVideo, FaArrowUp } from "react-icons/fa"; // Import icons for media and voting
 import { haversineDistance } from "../lib/issue-sorting";
-
-
-function normalizeIdList(raw) {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  const numericValues = raw
-    .map((value) => {
-      if (typeof value === "number") {
-        return value;
-      }
-      if (typeof value === "string") {
-        const parsed = Number.parseInt(value, 10);
-        return Number.isNaN(parsed) ? null : parsed;
-      }
-      return null;
-    })
-    .filter((value) => typeof value === "number" && Number.isInteger(value));
-
-  return Array.from(new Set(numericValues));
-}
-
-function normalizeUserId(raw) {
-  if (typeof raw === "number" && Number.isInteger(raw)) {
-    return raw;
-  }
-
-  if (typeof raw === "string") {
-    const parsed = Number.parseInt(raw, 10);
-    return Number.isInteger(parsed) ? parsed : null;
-  }
-
-  return null;
-}
+import { normalizeIdList, normalizeUserId } from "@/lib/normalize";
 
 export default function IssueCard({ issue }) {
   const router = useRouter();
@@ -243,7 +209,9 @@ export default function IssueCard({ issue }) {
               </h3>
               {/* Distance & Date */}
               <div className="text-xs font-medium text-gray-500 md:text-right">
-                {distanceKM ? `${distanceKM} km` : "Locating..."}
+                {distanceKM
+                  ? `${distanceKM} km`
+                  : issue.location || "Location recorded"}
                 <span className="mx-1 text-gray-300">•</span>
                 {formattedDate}
               </div>

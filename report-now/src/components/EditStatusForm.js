@@ -1,7 +1,13 @@
-"use client"
+"use client";
+
 import { useState } from "react";
 
-export default function EditStatusForm({ issueId, currentStatus, onUpdate, onCancel }) {
+export default function EditStatusForm({
+  issueId,
+  currentStatus,
+  onUpdate,
+  onCancel,
+}) {
   const [newStatus, setNewStatus] = useState(currentStatus);
   const [loading, setLoading] = useState(false);
   const [updateMessage, setUpdateMessage] = useState("");
@@ -16,7 +22,7 @@ export default function EditStatusForm({ issueId, currentStatus, onUpdate, onCan
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setUpdateMessage(`Error: ${data.error || "Update failed"}`);
       } else {
         const updatedIssue = await res.json();
@@ -36,7 +42,8 @@ export default function EditStatusForm({ issueId, currentStatus, onUpdate, onCan
       <select
         value={newStatus}
         onChange={(e) => setNewStatus(e.target.value)}
-        className="border p-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+        aria-label="Update issue resolution status"
+        className="border border-gray-300 p-1.5 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
       >
         <option value="Pending">Pending</option>
         <option value="In Progress">In Progress</option>
@@ -44,20 +51,27 @@ export default function EditStatusForm({ issueId, currentStatus, onUpdate, onCan
         <option value="Rejected">Rejected</option>
       </select>
       <button
+        type="button"
         onClick={handleUpdate}
         disabled={loading}
-        className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition disabled:opacity-50"
+        className="bg-green-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-green-700 transition disabled:opacity-50 cursor-pointer"
       >
         {loading ? "Updating..." : "Update"}
       </button>
       <button
+        type="button"
         onClick={onCancel}
-        className="bg-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-400 transition"
+        className="bg-gray-200 text-gray-700 px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-300 transition cursor-pointer"
       >
         Cancel
       </button>
       {updateMessage && (
-        <p className="text-sm text-gray-600" role="alert">
+        <p
+          className={`text-xs ${
+            updateMessage.startsWith("Error") ? "text-red-600" : "text-green-700"
+          }`}
+          role="alert"
+        >
           {updateMessage}
         </p>
       )}
