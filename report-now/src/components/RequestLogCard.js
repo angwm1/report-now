@@ -8,43 +8,61 @@ export default function RequestLogCard({ limit = 8, pollMs = 0 }) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
 
-  const fetchData = React.useCallback(async () => {
-    try {
-      setError("");
-      const res = await fetch(`/api/admin/activity?limit=${limit}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Failed to load activity (${res.status})`);
-      }
-      const data = await res.json();
-      setItems(Array.isArray(data?.events) ? data.events : []);
-    } catch (e) {
-      setError(e.message || "Failed to load activity");
-    } finally {
-      setLoading(false);
-    }
-  }, [limit]);
+  const [reloadTrigger, setReloadTrigger] = React.useState(0);
+  const refresh = React.useCallback(() => {
+    setLoading(true);
+    setReloadTrigger((v) => v + 1);
+  }, []);
 
   React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let ignore = false;
+
+    async function loadActivity() {
+      try {
+        const res = await fetch(`/api/admin/activity?limit=${limit}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `Failed to load activity (${res.status})`);
+        }
+        const data = await res.json();
+        if (!ignore) {
+          setError("");
+          setItems(Array.isArray(data?.events) ? data.events : []);
+        }
+      } catch (e) {
+        if (!ignore) {
+          setError(e.message || "Failed to load activity");
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadActivity();
+
+    return () => {
+      ignore = true;
+    };
+  }, [limit, reloadTrigger]);
 
   React.useEffect(() => {
     if (!pollMs || pollMs < 1000) return;
-    const id = setInterval(fetchData, pollMs);
+    const id = setInterval(refresh, pollMs);
     return () => clearInterval(id);
-  }, [fetchData, pollMs]);
+  }, [pollMs, refresh]);
 
   return (
     <div className="rounded-3xl border border-border bg-gray-100 p-5">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-xl font-semibold text-foreground">Recent Activity</h3>
         <button
-          onClick={fetchData}
+          onClick={refresh}
           className="rounded-xl border border-primary-200 bg-primary px-2 py-1 text-md text-gray-50 hover:bg-primary-hover hover:cursor-pointer"
         >
           Refresh

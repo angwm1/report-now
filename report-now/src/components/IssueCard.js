@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { FaVideo, FaArrowUp } from "react-icons/fa"; // Import icons for media and voting
 import { haversineDistance } from "../lib/issue-sorting";
@@ -50,12 +50,16 @@ export default function IssueCard({ issue }) {
 
   // We track the user's location in state
   const [userLocation, setUserLocation] = useState(null);
-  // Computed distance from user to this issue
-  const [distanceKM, setDistanceKM] = useState(null);
-  // Track if the media is a video
-  const [isVideo, setIsVideo] = useState(false);
-  const [upvoteIds, setUpvoteIds] = useState(() => normalizeIdList(issue.upvotes));
+  const [localUpvotes, setLocalUpvotes] = useState(null);
+  const [prevUpvotes, setPrevUpvotes] = useState(issue.upvotes);
   const [isVoting, setIsVoting] = useState(false);
+
+  if (issue.upvotes !== prevUpvotes) {
+    setPrevUpvotes(issue.upvotes);
+    setLocalUpvotes(null);
+  }
+
+  const upvoteIds = localUpvotes ?? normalizeIdList(issue.upvotes);
 
   // Attempt to get user location on mount (only if user grants permission)
   useEffect(() => {
@@ -74,8 +78,8 @@ export default function IssueCard({ issue }) {
     }
   }, []);
 
-  // Whenever we have userLocation AND the issue has lat/lng, compute the distance
-  useEffect(() => {
+  // Computed distance from user to this issue
+  const distanceKM = useMemo(() => {
     if (
       userLocation &&
       issue.latitude != null &&
@@ -88,26 +92,23 @@ export default function IssueCard({ issue }) {
         issue.longitude
       );
       // Round to one decimal place
-      setDistanceKM(d.toFixed(1));
+      return d.toFixed(1);
     }
+    return null;
   }, [userLocation, issue.latitude, issue.longitude]);
 
   // Determine the media type and source
-  useEffect(() => {
+  const isVideo = useMemo(() => {
     if (issue.mediaUrls && issue.mediaUrls.length > 0) {
       // Check if first media is a video (either from mediaTypes array or by URL)
       const firstMediaUrl = issue.mediaUrls[0];
-      const isFirstMediaVideo = 
+      return Boolean(
         (issue.mediaTypes && issue.mediaTypes[0]?.startsWith('video/')) ||
-        firstMediaUrl.match(/\.(mp4|webm|ogg|mov)$/i);
-      
-      setIsVideo(isFirstMediaVideo);
+        firstMediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)
+      );
     }
+    return false;
   }, [issue.mediaUrls, issue.mediaTypes]);
-
-  useEffect(() => {
-    setUpvoteIds(normalizeIdList(issue.upvotes));
-  }, [issue.upvotes]);
 
   // Use the first media URL or fallback
   const mediaSrc =
@@ -167,7 +168,7 @@ export default function IssueCard({ issue }) {
       }
 
       const updatedIssue = await response.json();
-      setUpvoteIds(normalizeIdList(updatedIssue.upvotes));
+      setLocalUpvotes(normalizeIdList(updatedIssue.upvotes));
     } catch (error) {
       console.error("Error submitting vote:", error);
     } finally {

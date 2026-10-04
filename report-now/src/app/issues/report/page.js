@@ -59,7 +59,7 @@ export default function ReportIssuePage() {
   const [previews, setPreviews] = useState([]); // [{ file, preview }]
 
   // Drag state
-  const [dragging, setDragging] = useState(false);
+  const [draggedIdx, setDraggedIdx] = useState(null);
   const dragItem = useRef(null);
   const dragOverItem = useRef(null);
 
@@ -148,7 +148,7 @@ export default function ReportIssuePage() {
 
   const handleDragStart = (index) => {
     dragItem.current = index;
-    setDragging(true);
+    setDraggedIdx(index);
   };
 
   const handleDragEnter = (index) => {
@@ -176,7 +176,7 @@ export default function ReportIssuePage() {
 
     dragItem.current = null;
     dragOverItem.current = null;
-    setDragging(false);
+    setDraggedIdx(null);
   };
 
   const handleRemoveFile = (index) => {
@@ -315,7 +315,7 @@ export default function ReportIssuePage() {
                       <div
                         key={`${file.name}-${idx}`}
                         className={`relative h-24 w-full overflow-hidden rounded border border-border bg-gray-100 ${
-                          dragging && dragItem.current === idx
+                          draggedIdx === idx
                             ? "opacity-50 ring-2"
                             : ""
                         }`}
