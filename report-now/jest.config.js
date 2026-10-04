@@ -13,6 +13,9 @@ const customJestConfig = {
   testMatch: ["**/?(*.)+(test).[jt]s?(x)"],
   collectCoverageFrom: [
     "src/app/api/**/*.js",
+    "src/app/robots.js",
+    "src/app/sitemap.js",
+    "src/app/manifest.js",
     "src/lib/**/*.js",
     "!src/app/api/**/route.test.js",
   ],
