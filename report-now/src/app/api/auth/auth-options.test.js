@@ -85,3 +85,41 @@ describe("authOptions.credentials.authorize", () => {
     expect(compare).toHaveBeenCalledWith("correct", "hashed");
   });
 });
+
+describe("authOptions callbacks", () => {
+  const { jwt, session } = authOptions.callbacks;
+
+  test("jwt callback sets token id and role when user is present", async () => {
+    const token = await jwt({
+      token: { sub: "10" },
+      user: { id: 10, role: "admin" },
+    });
+    expect(token).toEqual({ sub: "10", id: 10, role: "admin" });
+  });
+
+  test("jwt callback returns token unchanged when user is absent", async () => {
+    const token = await jwt({
+      token: { sub: "10", id: 10, role: "citizen" },
+      user: null,
+    });
+    expect(token).toEqual({ sub: "10", id: 10, role: "citizen" });
+  });
+
+  test("session callback attaches token id and role to session.user", async () => {
+    const result = await session({
+      session: { user: { name: "Test User" } },
+      token: { id: 10, role: "admin" },
+    });
+    expect(result.user.id).toBe(10);
+    expect(result.user.role).toBe("admin");
+  });
+
+  test("session callback handles undefined token safely", async () => {
+    const result = await session({
+      session: { user: { name: "Test User" } },
+      token: null,
+    });
+    expect(result).toEqual({ user: { name: "Test User" } });
+  });
+});
+

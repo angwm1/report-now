@@ -30,8 +30,7 @@ export async function POST(request) {
     }
 
     // Extract user information from the token
-    // Ensure that your NextAuth session callback attaches user.id and user.name to the token
-    const userId = Number(token.id);
+    const userId = Number(token.id ?? token.sub);
     const userName = token.name || "Anonymous";
 
     // Check if this user has already left a review for this issue

@@ -9,7 +9,6 @@ export async function PUT(request) {
   try {
     // get session
     const session = await getServerSession();
-    console.log("Session received:", session);
 
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,14 +16,14 @@ export async function PUT(request) {
 
     // Use email from session instead of ID
     if (!session.user.email) {
-      console.error("No user email in session:", session);
+      console.error("No user email in session");
       return NextResponse.json({ error: "Invalid session data" }, { status: 401 });
     }
 
     // get user data from request body
     const data = await request.json();
     const { name, email, phone } = data;
-    console.log("Received update data:", { name, email, phone });
+
 
     // Verify name and email
     if (!name || !email) {

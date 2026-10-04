@@ -130,4 +130,62 @@ describe("GET /api/admin/activity", () => {
     const result = await getResponseData(response);
     expect(result.error).toBe("Internal Server Error");
   });
+
+  test("handles pending invites and anonymous reporter fallbacks", async () => {
+    const now = new Date("2025-10-30T12:00:00Z").getTime();
+    const dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(now);
+
+    prisma.invite.findMany.mockResolvedValue([
+      {
+        id: "pending-1",
+        email: "pending@gov.sg",
+        role: "admin",
+        createdAt: "2025-10-29T08:00:00Z",
+        expiresAt: "2025-11-05T08:00:00Z",
+        used: false,
+      },
+    ]);
+
+    prisma.issue.findMany.mockResolvedValue([
+      {
+        id: 100,
+        title: "Anonymous issue",
+        status: "",
+        updatedAt: "2025-10-29T09:00:00Z",
+        reporter: null,
+      },
+    ]);
+
+    prisma.review.findMany.mockResolvedValue([
+      {
+        id: 50,
+        rating: 5,
+        comment: "",
+        createdAt: "2025-10-29T10:00:00Z",
+        user: null,
+        issue: null,
+      },
+    ]);
+
+    const request = createRequest("http://localhost/api/admin/activity?limit=10");
+    const response = await GET(request);
+    expect(response.status).toBe(200);
+
+    const result = await getResponseData(response);
+    expect(result.events).toHaveLength(3);
+
+    const pendingInvite = result.events.find((e) => e.type === "invite");
+    expect(pendingInvite.status).toBe("pending");
+
+    const issueEvent = result.events.find((e) => e.type === "issue");
+    expect(issueEvent.subject).toBe("unknown");
+    expect(issueEvent.status).toBe("updated");
+
+    const reviewEvent = result.events.find((e) => e.type === "review");
+    expect(reviewEvent.subject).toBe("anonymous");
+    expect(reviewEvent.summary).toBe("Review");
+
+    dateNowSpy.mockRestore();
+  });
 });
+

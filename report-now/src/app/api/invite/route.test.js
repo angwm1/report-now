@@ -139,6 +139,32 @@ describe("POST /api/invite", () => {
     expect(mailOptions.subject).toContain("You're Invited");
   });
 
+  test("uses custom SMTP_HOST and SMTP_PORT when provided", async () => {
+    process.env.SMTP_HOST = "smtp.custom-mail.sg";
+    process.env.SMTP_PORT = "587";
+    getServerSession.mockResolvedValue({ user: { role: "admin" } });
+    prismaInvite.create.mockResolvedValue({
+      token: "customtoken",
+      email: "dept@custom.sg",
+      role: "governmentDepartment",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    const request = createRequest({ email: "dept@custom.sg" });
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    expect(nodemailer.createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: "smtp.custom-mail.sg",
+        port: 587,
+      }),
+    );
+
+    delete process.env.SMTP_HOST;
+    delete process.env.SMTP_PORT;
+  });
+
+
   test("returns 500 on unexpected error", async () => {
     // Simulate an admin session.
     getServerSession.mockResolvedValue({ user: { role: "admin" } });

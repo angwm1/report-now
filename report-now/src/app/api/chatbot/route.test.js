@@ -75,6 +75,22 @@ describe("POST /api/chatbot", () => {
     expect(data.error).toBe("Rate limit");
   });
 
+  test("uses default OpenAI API error message when error.message is missing", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ error: null }),
+    });
+
+    const request = createRequest({ message: "Test query" });
+    const response = await POST(request);
+    expect(response.status).toBe(500);
+
+    const data = await getResponseData(response);
+    expect(data.error).toBe("OpenAI API error");
+  });
+
+
   test("returns 500 when unexpected error occurs", async () => {
     global.fetch = jest.fn().mockRejectedValue(new Error("Network down"));
 

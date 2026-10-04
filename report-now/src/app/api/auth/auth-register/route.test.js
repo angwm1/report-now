@@ -104,7 +104,62 @@ describe("POST /api/auth/auth-register", () => {
     expect(responseData.error).toBe("Invalid or expired invite token");
   });
 
+  test("returns 400 for expired invite token", async () => {
+    const dataWithInvite = { ...validData, inviteToken: "expired-token" };
+    global.__prismaMock.invite.findUnique.mockResolvedValue({
+      token: "expired-token",
+      email: validData.email,
+      expiresAt: new Date(Date.now() - 3600000), // expired 1 hour ago
+      used: false,
+      role: "governmentDepartment",
+    });
+
+    const request = createRequest(dataWithInvite);
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+
+    const responseData = await getResponseData(response);
+    expect(responseData.error).toBe("Invalid or expired invite token");
+  });
+
+  test("returns 400 for already used invite token", async () => {
+    const dataWithInvite = { ...validData, inviteToken: "used-token" };
+    global.__prismaMock.invite.findUnique.mockResolvedValue({
+      token: "used-token",
+      email: validData.email,
+      expiresAt: new Date(Date.now() + 3600000),
+      used: true,
+      role: "governmentDepartment",
+    });
+
+    const request = createRequest(dataWithInvite);
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+
+    const responseData = await getResponseData(response);
+    expect(responseData.error).toBe("Invalid or expired invite token");
+  });
+
+  test("returns 400 when registration email does not match invite email", async () => {
+    const dataWithInvite = { ...validData, inviteToken: "other-user-token" };
+    global.__prismaMock.invite.findUnique.mockResolvedValue({
+      token: "other-user-token",
+      email: "different@example.com",
+      expiresAt: new Date(Date.now() + 3600000),
+      used: false,
+      role: "governmentDepartment",
+    });
+
+    const request = createRequest(dataWithInvite);
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+
+    const responseData = await getResponseData(response);
+    expect(responseData.error).toBe("Invalid or expired invite token");
+  });
+
   test("registers a new user with valid invite token", async () => {
+
     const dataWithInvite = { ...validData, inviteToken: "valid-token" };
 
     // Simulate a valid invite.
