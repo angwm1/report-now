@@ -1,7 +1,7 @@
 // File: /src/components/MapWithPanel.jsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapContainer, Marker, TileLayer, useMapEvents, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -31,6 +31,18 @@ function MapClickHandler({ onMapClick }) {
 export default function MapWithPanel({ issues }) {
   const [selectedIssue, setSelectedIssue] = useState(null);
   const router = useRouter(); // Initialize router
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        setSelectedIssue(null);
+      }
+    }
+    if (selectedIssue) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [selectedIssue]);
 
   // Default center and zoom; adjust as needed or compute from issues
   const defaultCenter = [1.3521, 103.8198];
@@ -120,16 +132,14 @@ export default function MapWithPanel({ issues }) {
             )}
 
             {/* Issue Details */}
-            <div className="flex justify-between">
-              <span className="mb-2 font-bold text-lg">{selectedIssue.title}</span>
-              <span className="mb-2 text-xs">{new Date(selectedIssue.createdAt).toLocaleString()}</span>
+            <div className="flex justify-between items-baseline gap-2">
+              <span className="mb-2 font-bold text-lg text-gray-900">{selectedIssue.title}</span>
+              <span className="mb-2 text-xs text-gray-500 shrink-0">
+                {selectedIssue.createdAt ? new Date(selectedIssue.createdAt).toLocaleString() : ""}
+              </span>
             </div>
             
             <div className="text-sm text-gray-700 space-y-2">
-              {/* <div>
-                <span className="font-semibold">Status:</span>{" "}
-                {selectedIssue.status}
-              </div> */}
               <div
                   className={`text-xs font-medium px-2 py-1 rounded flex items-center w-fit ${
                     selectedIssue.status === "Done"
@@ -158,6 +168,7 @@ export default function MapWithPanel({ issues }) {
               </div>
             </div>
             <button
+              type="button"
               className="mt-4 w-full bg-[color:var(--color-primary)] text-white py-2 rounded hover:bg-[color:var(--color-primary-600)] transition cursor-pointer"
               onClick={() => navigateToIssueDetails(selectedIssue.id)}
             >

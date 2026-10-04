@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { FaStar } from "react-icons/fa"; // Import star icon from react-icons
+import { FaStar, FaSpinner } from "react-icons/fa";
 
 export default function LeaveReviewForm({ issueId, onReviewSubmit }) {
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
-  const [reviewMessage, setReviewMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState({ text: "", isError: false });
 
-  const handleReviewSubmit = async () => {
+  const handleReviewSubmit = async (e) => {
+    e?.preventDefault();
     if (!rating) return;
     setLoading(true);
-    setReviewMessage("");
+    setStatusMessage({ text: "", isError: false });
+
     try {
       const res = await fetch("/api/reviews", {
         method: "POST",
@@ -21,76 +23,127 @@ export default function LeaveReviewForm({ issueId, onReviewSubmit }) {
         body: JSON.stringify({
           issueId: parseInt(issueId, 10),
           rating,
-          comment,
+          comment: comment.trim(),
         }),
       });
+
       if (!res.ok) {
-        const data = await res.json();
-        setReviewMessage(`Error: ${data.error || "Review submission failed"}`);
+        const data = await res.json().catch(() => ({}));
+        setStatusMessage({
+          text: data.error || "Review submission failed.",
+          isError: true,
+        });
       } else {
         const newReview = await res.json();
-        setReviewMessage("Review submitted successfully!");
-        onReviewSubmit(newReview);
+        setStatusMessage({
+          text: "Review submitted successfully! Thank you for your feedback.",
+          isError: false,
+        });
+        setComment("");
+        if (typeof onReviewSubmit === "function") {
+          onReviewSubmit(newReview);
+        }
       }
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      setReviewMessage("An error occurred while submitting review.");
+    } catch {
+      setStatusMessage({
+        text: "A network error occurred while submitting your review.",
+        isError: true,
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="mt-6 border-t pt-4">
-      <h3 className="text-xl font-bold mb-2">Leave a Review</h3>
-      
-      {/* Star rating component */}
-      <div className="flex items-center mb-4">
-        <span className="font-semibold mr-2">Rating:</span>
-        <div className="flex items-center">
-          <div className="flex">
-            {[...Array(5)].map((_, index) => {
-              const starValue = index + 1;
-              return (
+    <form onSubmit={handleReviewSubmit} className="mt-6 border-t pt-5">
+      <h3 className="text-xl font-bold mb-3 text-gray-900">Leave a Review</h3>
+
+      {/* Accessible Star rating */}
+      <div className="mb-4">
+        <label id="rating-label" className="block text-sm font-semibold text-gray-700 mb-1.5">
+          Rating:
+        </label>
+        <div
+          role="radiogroup"
+          aria-labelledby="rating-label"
+          className="flex items-center gap-1"
+        >
+          {[1, 2, 3, 4, 5].map((starValue) => {
+            const isFilled = (hoverRating || rating) >= starValue;
+            return (
+              <button
+                key={starValue}
+                type="button"
+                role="radio"
+                aria-checked={rating === starValue}
+                aria-label={`${starValue} star${starValue > 1 ? "s" : ""}`}
+                onClick={() => setRating(starValue)}
+                onMouseEnter={() => setHoverRating(starValue)}
+                onMouseLeave={() => setHoverRating(0)}
+                onFocus={() => setHoverRating(starValue)}
+                onBlur={() => setHoverRating(0)}
+                className="p-1 rounded-sm focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer transition-transform hover:scale-110"
+              >
                 <FaStar
-                  key={starValue}
                   size={24}
-                  className="cursor-pointer transition-colors duration-200"
-                  color={(hoverRating || rating) >= starValue ? "#FFD700" : "#e4e5e9"}
-                  onClick={() => setRating(starValue)}
-                  onMouseEnter={() => setHoverRating(starValue)}
-                  onMouseLeave={() => setHoverRating(0)}
+                  className="transition-colors duration-150"
+                  color={isFilled ? "#FFD700" : "#d1d5db"}
+                  aria-hidden="true"
                 />
-              );
-            })}
-          </div>
-          <span className="ml-2 text-gray-600 text-lg font-medium">
-            {hoverRating || rating}
+              </button>
+            );
+          })}
+          <span className="ml-2 text-sm font-semibold text-gray-600" aria-live="polite">
+            {hoverRating || rating} / 5
           </span>
         </div>
       </div>
-      
-      <div className="mt-4">
+
+      <div className="mb-4">
+        <label
+          htmlFor="review-comment"
+          className="block text-sm font-semibold text-gray-700 mb-1.5"
+        >
+          Comments (Optional)
+        </label>
         <textarea
+          id="review-comment"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Enter your review..."
+          placeholder="Share details about the quality or speed of the resolution..."
           rows={3}
-          className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+          className="w-full border border-gray-300 p-2.5 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
       </div>
+
       <button
-        onClick={handleReviewSubmit}
+        type="submit"
         disabled={loading}
-        className="mt-2 w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition disabled:opacity-50"
+        aria-busy={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-xs cursor-pointer"
       >
-        {loading ? "Submitting Review..." : "Submit Review"}
+        {loading ? (
+          <>
+            <FaSpinner className="animate-spin" aria-hidden="true" />
+            <span>Submitting Review...</span>
+          </>
+        ) : (
+          "Submit Review"
+        )}
       </button>
-      {reviewMessage && (
-        <p className="text-sm text-gray-600 mt-2" role="alert">
-          {reviewMessage}
-        </p>
+
+      {statusMessage.text && (
+        <div
+          role="alert"
+          className={`mt-3 rounded-lg p-3 text-sm font-medium ${
+            statusMessage.isError
+              ? "bg-red-50 text-red-700 border border-red-200"
+              : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+          }`}
+        >
+          {statusMessage.text}
+        </div>
       )}
-    </div>
+    </form>
   );
 }

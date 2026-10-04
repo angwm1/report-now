@@ -62,10 +62,13 @@ export default function RequestLogCard({ limit = 8, pollMs = 0 }) {
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-xl font-semibold text-foreground">Recent Activity</h3>
         <button
+          type="button"
           onClick={refresh}
-          className="rounded-xl border border-primary-200 bg-primary px-2 py-1 text-md text-gray-50 hover:bg-primary-hover hover:cursor-pointer"
+          disabled={loading}
+          aria-label="Refresh recent activity"
+          className="rounded-xl border border-primary-200 bg-primary px-3 py-1 text-sm text-gray-50 hover:bg-primary-hover hover:cursor-pointer disabled:opacity-50 transition-colors"
         >
-          Refresh
+          {loading ? "Refreshing…" : "Refresh"}
         </button>
       </div>
 
@@ -79,7 +82,7 @@ export default function RequestLogCard({ limit = 8, pollMs = 0 }) {
         <ul className="mt-2 space-y-2 text-sm">
           {items.map((it, idx) => (
             <li
-              key={idx}
+              key={it.id || `${it.type}-${it.tsISO || it.ts}-${idx}`}
               className="flex items-center gap-3"
             >
               {/* Left: text block */}
@@ -146,8 +149,9 @@ function formatSubLine(it) {
 }
 
 function formatWhen(isoOrDate) {
+  if (!isoOrDate) return "";
   const d = new Date(isoOrDate);
-  return isNaN(d) ? "" : d.toLocaleString();
+  return isNaN(d.getTime()) ? "" : d.toLocaleString();
 }
 
 function formatStatus(it) {
