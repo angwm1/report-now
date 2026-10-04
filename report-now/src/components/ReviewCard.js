@@ -1,39 +1,53 @@
 // File: /src/components/ReviewCard.js
 "use client";
-import { User2 } from "lucide-react"
+
+import { User2 } from "lucide-react";
 
 export default function ReviewCard({ review }) {
-  // Create an array of star icons based on the rating.
-//   const stars = Array.from({ length: review.rating }, (_, i) => (
-//     <span key={i} className="text-yellow-500">&#9733;</span>
-//   ));
-  // If you want to display 5 stars with empty stars for the remainder, uncomment below:
+  const safeRating = Math.max(0, Math.min(5, Math.round(Number(review?.rating) || 0)));
+
   const stars = (
-    <>
-      {Array.from({ length: review.rating }, (_, i) => (
-        <span key={`filled-${i}`} className="text-yellow-500">&#9733;</span>
+    <div
+      className="flex items-center gap-0.5"
+      role="img"
+      aria-label={`${safeRating} out of 5 stars`}
+    >
+      {Array.from({ length: safeRating }, (_, i) => (
+        <span key={`filled-${i}`} className="text-amber-400 text-lg">
+          ★
+        </span>
       ))}
-      {Array.from({ length: 5 - review.rating }, (_, i) => (
-        <span key={`empty-${i}`} className="text-gray-300">&#9733;</span>
+      {Array.from({ length: 5 - safeRating }, (_, i) => (
+        <span key={`empty-${i}`} className="text-gray-200 text-lg">
+          ★
+        </span>
       ))}
-    </>
+    </div>
   );
 
   return (
-    <div className="p-4 border rounded-lg shadow-sm bg-gray-50">
+    <div className="p-4 border border-gray-200 rounded-xl shadow-xs bg-white">
       <div className="flex items-center">
-        <User2 className="h-5 w-5 mt-1 mr-3 text-[color:var(--color-muted)]" />
-        <div className="flex flex-grow-1 justify-between items-center">
-          <div className="text-lg font-semibold">
-            {review.userName || "Anonymous"}
+        <User2 className="h-5 w-5 mt-0.5 mr-3 text-gray-400 shrink-0" />
+        <div className="flex flex-grow justify-between items-center">
+          <div className="text-base font-semibold text-gray-900">
+            {review?.userName || "Anonymous Resident"}
           </div>
-          <div className="flex">{stars}</div>
+          <div>{stars}</div>
         </div>
       </div>
-      <p className="mt-2 text-gray-700">{review.comment || "No comment provided."}</p>
-      <p className="mt-1 text-xs text-gray-500">
-        {new Date(review.createdAt).toLocaleString()}
+      <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+        {review?.comment || "No comment provided."}
       </p>
+      {review?.createdAt && (
+        <p className="mt-2 text-xs text-gray-400">
+          {new Date(review.createdAt).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </p>
+      )}
     </div>
   );
 }

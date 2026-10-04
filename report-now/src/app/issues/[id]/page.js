@@ -12,40 +12,7 @@ import LeaveReviewForm from "@/components/LeaveReviewForm";
 import ReviewCard from "@/components/ReviewCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { FaStar, FaStarHalfAlt, FaRegStar, FaArrowUp } from "react-icons/fa";
-
-function normalizeIdList(raw) {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  const numericValues = raw
-    .map((value) => {
-      if (typeof value === "number") {
-        return value;
-      }
-      if (typeof value === "string") {
-        const parsed = Number.parseInt(value, 10);
-        return Number.isNaN(parsed) ? null : parsed;
-      }
-      return null;
-    })
-    .filter((value) => typeof value === "number" && Number.isInteger(value));
-
-  return Array.from(new Set(numericValues));
-}
-
-function normalizeUserId(raw) {
-  if (typeof raw === "number" && Number.isInteger(raw)) {
-    return raw;
-  }
-
-  if (typeof raw === "string") {
-    const parsed = Number.parseInt(raw, 10);
-    return Number.isInteger(parsed) ? parsed : null;
-  }
-
-  return null;
-}
+import { normalizeIdList, normalizeUserId } from "@/lib/normalize";
 
 export default function IssueDetailPage() {
   const params = useParams();
