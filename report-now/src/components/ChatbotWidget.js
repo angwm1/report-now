@@ -4,26 +4,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaComments, FaTimes, FaSpinner } from "react-icons/fa";
 
+const INITIAL_GREETING = {
+  role: "assistant",
+  content:
+    "Hello! I am GovBot, an expert chatbot in Singapore Government‑related matters. I can provide information about major ministries, statutory boards, and autonomous agencies in Singapore. Feel free to ask me anything!",
+};
+
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
-  const [conversation, setConversation] = useState([]);
+  const [conversation, setConversation] = useState([INITIAL_GREETING]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const conversationEndRef = useRef(null);
-
-  // Show initial greeting once when chat opens
-  useEffect(() => {
-    if (isOpen && conversation.length === 0) {
-      setConversation([
-        {
-          role: "assistant",
-          content:
-            "Hello! I am GovBot, an expert chatbot in Singapore Government‑related matters. I can provide information about major ministries, statutory boards, and autonomous agencies in Singapore. Feel free to ask me anything!",
-        },
-      ]);
-    }
-  }, [isOpen, conversation.length]);
 
   // Scroll to bottom when conversation changes
   useEffect(() => {

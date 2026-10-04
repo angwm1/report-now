@@ -38,15 +38,17 @@ export default function AccountPage() {
       return;
     }
 
-    if (session && session.user) {
-      setFormData({
-        name: session.user.name || "",
-        email: session.user.email || "",
-        phone: session.user.contactNumber || session.user.phone || "",
-      });
-    }
+    const t = setTimeout(() => {
+      if (session && session.user) {
+        setFormData({
+          name: session.user.name || "",
+          email: session.user.email || "",
+          phone: session.user.contactNumber || session.user.phone || "",
+        });
+      }
+      setIsPrefilling(false);
+    }, 0);
 
-    const t = setTimeout(() => setIsPrefilling(false), 250);
     return () => clearTimeout(t);
   }, [session, status, router]);
 
