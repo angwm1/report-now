@@ -129,6 +129,38 @@ describe("POST /api/reviews", () => {
     });
   });
 
+  test("falls back to Anonymous and token.sub when user name and id are absent", async () => {
+    getToken.mockResolvedValue({ sub: "5" });
+    prismaReview.findFirst.mockResolvedValue(null);
+    prismaReview.create.mockResolvedValue({
+      id: 2,
+      issueId: 1,
+      rating: 5,
+      comment: "Anonymous review",
+      userId: 5,
+      userName: "Anonymous",
+    });
+
+    const request = createRequest({
+      issueId: 1,
+      rating: 5,
+      comment: "Anonymous review",
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(201);
+    expect(prismaReview.create).toHaveBeenCalledWith({
+      data: {
+        issueId: 1,
+        rating: 5,
+        comment: "Anonymous review",
+        userId: 5,
+        userName: "Anonymous",
+      },
+    });
+  });
+
+
   test("returns 500 on unexpected error", async () => {
     // Simulate valid token.
     getToken.mockResolvedValue({ id: "1", name: "Test User" });

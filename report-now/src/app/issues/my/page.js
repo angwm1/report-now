@@ -17,7 +17,8 @@ export default function MyIssuesPage() {
         // If session exists, filter issues by reporterId.
         if (session && session.user && session.user.id) {
           const userId = parseInt(session.user.id, 10);
-          const filteredIssues = data.filter(
+          const validData = Array.isArray(data) ? data : [];
+          const filteredIssues = validData.filter(
             (issue) => issue.reporterId === userId
           );
           setIssues(filteredIssues);

@@ -226,12 +226,16 @@ export async function DELETE(request, context) {
     );
   }
 
-  if (issue.reporterId !== userId) {
+  const isOwner = issue.reporterId === userId;
+  const isAdmin = token.role === "admin" || token.role === "superAdmin";
+
+  if (!isOwner && !isAdmin) {
     return NextResponse.json(
       { error: "Forbidden" },
       { status: 403 },
     );
   }
+
 
   await prisma.issue.updateMany({
     where: { duplicateId: issueId },

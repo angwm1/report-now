@@ -6,8 +6,9 @@ export default async function MapPage() {
  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
  const res = await fetch(`${baseUrl}/api/issues`, { cache: "no-store" });
  const issues = await res.json();
+ const validIssues = Array.isArray(issues) ? issues : [];
 
  return (
-    <MapWrapper issues={issues} />
+    <MapWrapper issues={validIssues} />
  );
-}
+}

@@ -98,4 +98,22 @@ jest.mock("next-auth/next", () => ({
       // The route returns only non-sensitive fields.
       expect(data).toEqual(fakeUser);
     });
-  });  
+
+    test("returns 500 when database operation throws", async () => {
+      getServerSession.mockResolvedValue(dummySession);
+      prismaUser.findUnique.mockRejectedValue(new Error("Database disconnected"));
+
+      const originalError = console.error;
+      console.error = jest.fn();
+
+      const request = createRequest("http://localhost/api/user/details?email=user@example.com");
+      const response = await GET(request);
+      expect(response.status).toBe(500);
+
+      const data = await getResponseData(response);
+      expect(data.error).toContain("Failed to fetch details");
+
+      console.error = originalError;
+    });
+  });
+  

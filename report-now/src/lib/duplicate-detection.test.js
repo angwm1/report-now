@@ -176,4 +176,109 @@ describe("checkAndMarkDuplicate", () => {
     expect(output).toEqual({ duplicate: false, reason: null });
     expect(prismaMock.issue.update).not.toHaveBeenCalled();
   });
+
+  test("handles model returning duplicate: false", async () => {
+    prismaMock.issue.findUnique.mockResolvedValue({
+      id: 50,
+      title: "Broken streetlight",
+      description: "Streetlight flickering",
+      latitude: 1.3,
+      longitude: 103.8,
+    });
+    prismaMock.issue.findMany.mockResolvedValue([
+      { id: 20, title: "Litter", description: "Rubbish bin overflow" },
+    ]);
+    prismaMock.issue.update.mockResolvedValue({});
+
+    openAICreateMock.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              duplicate: false,
+              duplicateId: null,
+              reason: "Different municipal problems.",
+            }),
+          },
+        },
+      ],
+    });
+
+    const checkAndMarkDuplicate = await loadModule();
+    const result = await checkAndMarkDuplicate(50);
+
+    expect(result).toEqual({
+      duplicate: false,
+      reason: "Different municipal problems.",
+    });
+    expect(prismaMock.issue.update).toHaveBeenCalledWith({
+      where: { id: 50 },
+      data: {
+        duplicateId: null,
+        duplicateReason: "Different municipal problems.",
+      },
+    });
+  });
+
+  test("handles model returning duplicate candidate that is not in candidate list", async () => {
+    prismaMock.issue.findUnique.mockResolvedValue({
+      id: 55,
+      title: "Tree branch fallen",
+      description: "Blocking path",
+      latitude: 1.31,
+      longitude: 103.81,
+    });
+    prismaMock.issue.findMany.mockResolvedValue([
+      { id: 30, title: "Bench broken", description: "Bench needs repair" },
+    ]);
+    prismaMock.issue.update.mockResolvedValue({});
+
+    openAICreateMock.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              duplicate: true,
+              duplicateId: 9999, // Does not match candidate 30
+              reason: "Hypothetical match.",
+            }),
+          },
+        },
+      ],
+    });
+
+    const checkAndMarkDuplicate = await loadModule();
+    const result = await checkAndMarkDuplicate(55);
+
+    expect(result).toEqual({
+      duplicate: false,
+      reason: "Hypothetical match.",
+    });
+    expect(prismaMock.issue.update).toHaveBeenCalledWith({
+      where: { id: 55 },
+      data: {
+        duplicateId: null,
+        duplicateReason: "Hypothetical match.",
+      },
+    });
+  });
+
+  test("handles non-string or non-object JSON content", async () => {
+    prismaMock.issue.findUnique.mockResolvedValue({
+      id: 60,
+      title: "Noise",
+      description: "Loud party",
+    });
+    prismaMock.issue.findMany.mockResolvedValue([{ id: 40, title: "Noise earlier" }]);
+
+    openAICreateMock.mockResolvedValue({
+      choices: [{ message: { content: null } }],
+    });
+
+    const checkAndMarkDuplicate = await loadModule();
+    const result = await checkAndMarkDuplicate(60);
+
+    expect(result).toEqual({ duplicate: false, reason: null });
+  });
 });
+

@@ -302,6 +302,153 @@ describe("POST /api/issues", () => {
     global.fetch = originalFetch;
   });
 
+  test("falls back to Unknown location when reverse geocoding fails", async () => {
+    const { getToken } = require("next-auth/jwt");
+    getToken.mockResolvedValue({ sub: "1" });
+
+    const originalFetch = global.fetch;
+    const originalConsoleError = console.error;
+    console.error = jest.fn();
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      statusText: "Service Unavailable",
+    });
+
+    categorize.mockResolvedValue("General");
+
+    const fakeIssue = {
+      id: 3,
+      title: "Geocode failure test",
+      description: "Test description",
+      latitude: 1.3,
+      longitude: 103.8,
+      location: "Unknown location",
+      status: "Pending",
+      category: "General",
+      upvotes: [],
+      reporterId: 1,
+      mediaUrls: null,
+    };
+    prismaIssue.create.mockResolvedValue(fakeIssue);
+
+    const request = createRequestWithFormData({
+      title: "Geocode failure test",
+      description: "Test description",
+      latitude: "1.3",
+      longitude: "103.8",
+    });
+    const context = createContext({});
+    const response = await POST(request, context);
+    expect(response.status).toBe(201);
+
+    expect(prismaIssue.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          location: "Unknown location",
+        }),
+      }),
+    );
+
+    global.fetch = originalFetch;
+    console.error = originalConsoleError;
+  });
+
+  test("continues and creates issue when Cloudinary upload fails", async () => {
+    const { getToken } = require("next-auth/jwt");
+    getToken.mockResolvedValue({ sub: "1" });
+
+    const originalConsoleError = console.error;
+    console.error = jest.fn();
+
+    // Mock upload_stream to return an error
+    cloudinary.v2.uploader.upload_stream.mockImplementationOnce((options, callback) => {
+      callback(new Error("Cloudinary quota exceeded"), null);
+      return { end: jest.fn() };
+    });
+
+    categorize.mockResolvedValue("General");
+
+    const dummyFile = new File(["content"], "test.png", { type: "image/png" });
+    dummyFile.arrayBuffer = () => Promise.resolve(new ArrayBuffer(8));
+
+    const fakeIssue = {
+      id: 4,
+      title: "Upload failure test",
+      description: "Test description",
+      latitude: null,
+      longitude: null,
+      location: null,
+      status: "Pending",
+      category: "General",
+      upvotes: [],
+      reporterId: 1,
+      mediaUrls: null,
+    };
+    prismaIssue.create.mockResolvedValue(fakeIssue);
+
+    const request = createRequestWithFormData({
+      title: "Upload failure test",
+      description: "Test description",
+      media: [dummyFile],
+    });
+    const context = createContext({});
+    const response = await POST(request, context);
+    expect(response.status).toBe(201);
+    expect(prismaIssue.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          mediaUrls: null,
+        }),
+      }),
+    );
+
+    console.error = originalConsoleError;
+  });
+
+  test("returns updated issue when duplicate detection marks duplicate", async () => {
+    jest.spyOn(global, "setTimeout").mockImplementation(() => 0);
+    const { getToken } = require("next-auth/jwt");
+    getToken.mockResolvedValue({ sub: "1" });
+
+    categorize.mockResolvedValue("General");
+    checkAndMarkDuplicate.mockResolvedValue({ duplicate: true, duplicateId: 10 });
+
+
+    const createdIssue = {
+      id: 5,
+      title: "Duplicate issue",
+      description: "Test description",
+      status: "Pending",
+      category: "General",
+      upvotes: [],
+      reporterId: 1,
+      duplicateId: null,
+    };
+    const updatedIssue = {
+      ...createdIssue,
+      duplicateId: 10,
+      duplicateReason: "Matched existing issue #10",
+    };
+
+    prismaIssue.create.mockResolvedValue(createdIssue);
+    prismaIssue.findUnique.mockResolvedValue(updatedIssue);
+
+    const request = createRequestWithFormData({
+      title: "Duplicate issue",
+      description: "Test description",
+    });
+    const context = createContext({});
+    const response = await POST(request, context);
+    expect(response.status).toBe(201);
+
+    const data = await getResponseData(response);
+    expect(data.duplicateId).toBe(10);
+    expect(prismaIssue.findUnique).toHaveBeenCalledWith({ where: { id: 5 } });
+  });
+
+
   test("returns 500 on unexpected error", async () => {
     const { getToken } = require("next-auth/jwt");
     getToken.mockResolvedValue({ sub: "1" });

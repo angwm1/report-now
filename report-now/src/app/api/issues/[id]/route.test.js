@@ -354,6 +354,34 @@ describe("DELETE /api/issues/[id]", () => {
     expect(prismaIssue.delete).not.toHaveBeenCalled();
   });
 
+  test("returns 400 when user identifier cannot be parsed in DELETE", async () => {
+    getToken.mockResolvedValue({ sub: "invalid-user" });
+
+    const request = {};
+    const context = createContext({ id: "1" });
+    const response = await DELETE(request, context);
+    expect(response.status).toBe(400);
+
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Invalid user identifier");
+  });
+
+  test("allows admin to delete an issue even if not reporter", async () => {
+    getToken.mockResolvedValue({ sub: "99", role: "admin" });
+    prismaIssue.findUnique.mockResolvedValue({ reporterId: 1 });
+    prismaIssue.updateMany.mockResolvedValue({ count: 1 });
+    prismaIssue.delete.mockResolvedValue({ id: 1 });
+
+    const request = {};
+    const context = createContext({ id: "1" });
+    const response = await DELETE(request, context);
+    expect(response.status).toBe(200);
+
+    const data = await getResponseData(response);
+    expect(data).toEqual({ success: true });
+    expect(prismaIssue.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+  });
+
   test("deletes issue and clears duplicates for owner", async () => {
     getToken.mockResolvedValue({ sub: "1" });
     prismaIssue.findUnique.mockResolvedValue({ reporterId: 1 });
@@ -374,3 +402,4 @@ describe("DELETE /api/issues/[id]", () => {
     expect(prismaIssue.delete).toHaveBeenCalledWith({ where: { id: 1 } });
   });
 });
+
