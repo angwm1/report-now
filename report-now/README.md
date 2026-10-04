@@ -174,7 +174,7 @@ For local tests, OpenAI calls are mocked to avoid external requests.
 - Located in `src/app/api/**/route.test.js`, `src/lib/*.test.js`, and `tests/`.
 - Mocks Prisma, OpenAI, Cloudinary, and NextAuth to keep tests deterministic.
 - `jest.config.js` wraps `next/jest`; `jest.setup.js` loads `.env.test` and polyfills (`TextEncoder`, `File`, etc.).
-- Coverage snapshot (30 Oct 2025): **92.82% statements / 74.71% branches / 93.47% functions / 93.70% lines**.
+- Coverage snapshot: **98.18% statements / 91.52% branches / 98.14% functions / 99.15% lines** (16 test suites, 112 passing tests).
 
 Run the full suite:
 
@@ -231,14 +231,14 @@ report-now/
 
 ## Continuous Integration
 
-Recommended CI workflow (GitHub Actions / GitLab CI / Azure Pipelines):
+Automated CI pipeline configured via GitHub Actions in [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
 
-1. Install dependencies (`npm ci`).
-2. Run lint checks (`npm run lint`).
-3. Execute tests (`npm run test` and `npx jest --coverage --runInBand`).
-4. Build and deploy upon success.
+1. **Dependency Installation**: Runs `npm ci` with Node.js 20 caching.
+2. **Prisma Generation**: Generates Prisma Client (`npx prisma generate`).
+3. **Lint Checks**: Executes ESLint 9 checks across all pages and route handlers (`npm run lint`).
+4. **Test & Coverage**: Executes full Jest suite with coverage metrics (`npx jest --coverage --runInBand`).
+5. **Production Build**: Compiles production Next.js application (`npm run build`).
 
-Vercel Deploy Previews can be tied to pull requests for real-time UI validation.
 
 ---
 
