@@ -469,4 +469,31 @@ describe("POST /api/issues", () => {
 
     console.error = originalError;
   });
+
+  test("handles checkAndMarkDuplicate failure gracefully and returns newly created issue", async () => {
+    const { getToken } = require("next-auth/jwt");
+    getToken.mockResolvedValue({ sub: "1" });
+
+    const fakeIssue = { id: 9, title: "Failing Duplicate Issue" };
+    prismaIssue.create.mockResolvedValue(fakeIssue);
+    checkAndMarkDuplicate.mockRejectedValue(new Error("AI service temporary failure"));
+
+    const originalError = console.error;
+    console.error = jest.fn();
+
+    const request = createRequestWithFormData({
+      title: "Failing Duplicate Issue",
+      description: "Description",
+    });
+    const response = await POST(request, createContext({}));
+    expect(response.status).toBe(201);
+    const data = await getResponseData(response);
+    expect(data).toEqual(fakeIssue);
+    expect(console.error).toHaveBeenCalledWith(
+      "Duplicate detection failed:",
+      expect.any(Error)
+    );
+
+    console.error = originalError;
+  });
 });

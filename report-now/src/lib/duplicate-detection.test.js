@@ -280,5 +280,23 @@ describe("checkAndMarkDuplicate", () => {
 
     expect(result).toEqual({ duplicate: false, reason: null });
   });
+
+  test("handles JSON primitives like numbers or null strings", async () => {
+    prismaMock.issue.findUnique.mockResolvedValue({
+      id: 61,
+      title: "Noise",
+      description: "Loud party",
+    });
+    prismaMock.issue.findMany.mockResolvedValue([{ id: 40, title: "Noise earlier" }]);
+
+    openAICreateMock.mockResolvedValue({
+      choices: [{ message: { content: "123" } }],
+    });
+
+    const checkAndMarkDuplicate = await loadModule();
+    const result = await checkAndMarkDuplicate(61);
+
+    expect(result).toEqual({ duplicate: false, reason: null });
+  });
 });
 

@@ -86,6 +86,23 @@ describe("GET /api/issues/[id]", () => {
     const data = await getResponseData(response);
     expect(data.error).toBe("Issue not found");
   });
+
+  test("returns issue with averageRating as null when there are no reviews", async () => {
+    const fakeIssue = {
+      id: 2,
+      title: "Issue without reviews",
+      description: "Description",
+      reviews: [],
+    };
+    prismaIssue.findUnique.mockResolvedValue(fakeIssue);
+
+    const context = createContext({ id: "2" });
+    const response = await GET({}, context);
+    expect(response.status).toBe(200);
+
+    const data = await getResponseData(response);
+    expect(data.averageRating).toBeNull();
+  });
 });
 
 describe("PATCH /api/issues/[id]", () => {
@@ -214,6 +231,25 @@ describe("PATCH /api/issues/[id]", () => {
       select: { status: true, upvotes: true },
     });
     expect(prismaIssue.update).not.toHaveBeenCalled();
+  });
+
+  test("toggles vote successfully when issue upvotes is null (non-array fallback)", async () => {
+    getToken.mockResolvedValue({ sub: "7" });
+    prismaIssue.findUnique.mockResolvedValue({ status: "Pending", upvotes: null });
+    const updatedIssue = { id: 1, upvotes: [7] };
+    prismaIssue.update.mockResolvedValue(updatedIssue);
+
+    const request = createRequest({ vote: "up" });
+    const context = createContext({ id: "1" });
+    const response = await PATCH(request, context);
+    expect(response.status).toBe(200);
+
+    const data = await getResponseData(response);
+    expect(data).toEqual(updatedIssue);
+    expect(prismaIssue.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { upvotes: { set: [7] } },
+    });
   });
 
   test("updates timeline when timelineUpdate is provided", async () => {
