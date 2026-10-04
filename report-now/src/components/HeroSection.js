@@ -12,7 +12,7 @@ export default function HeroSection() {
         {/* Background image */}
         <Image
           src="/heroBanner2.jpg"
-          alt="heroBanner2"
+          alt="Community neighborhood overview"
           fill
           className="object-cover object-center opacity-80 z-0"
           priority

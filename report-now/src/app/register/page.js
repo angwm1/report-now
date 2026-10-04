@@ -1,10 +1,12 @@
-// src\app\register\page.js
+// src/app/register/page.js
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { FaSpinner } from "react-icons/fa";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 function RegisterContent() {
   const router = useRouter();
@@ -54,98 +56,146 @@ function RegisterContent() {
         const data = await res.json();
         setError(data.error || "Registration failed");
       }
-    } catch (error) {
+    } catch (err) {
       setLoading(false);
-      console.error("Registration error:", error);
+      console.error("Registration error:", err);
       setError("An unexpected error occurred.");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center">Register an account</h1>
+      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        <h1 className="text-3xl font-bold mb-2 text-center text-gray-900">
+          Create an Account
+        </h1>
+        <p className="text-sm text-gray-500 mb-6 text-center">
+          Join ReportNow to report and monitor neighborhood issues
+        </p>
+
         {error && (
-          <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700 text-sm mb-5 text-center font-medium"
+          >
+            {error}
+          </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-5">
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block mb-1 text-gray-700">
-              Name
+            <label
+              htmlFor="register-name"
+              className="block mb-1 text-sm font-medium text-gray-700"
+            >
+              Full Name
             </label>
             <input
-              id="name"
+              id="register-name"
               type="text"
               required
+              autoComplete="name"
+              value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="border border-gray-300 p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+              className="border border-gray-300 p-2.5 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
               placeholder="Your full name"
             />
           </div>
+
           <div>
-            <label htmlFor="email" className="block mb-1 text-gray-700">
-              Email
+            <label
+              htmlFor="register-email"
+              className="block mb-1 text-sm font-medium text-gray-700"
+            >
+              Email Address
             </label>
             <input
-              id="email"
+              id="register-email"
               type="email"
               required
+              autoComplete="email"
+              value={formData.email}
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="border border-gray-300 p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+              className="border border-gray-300 p-2.5 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
               placeholder="yourname@example.com"
             />
           </div>
+
           <div>
-            <label htmlFor="password" className="block mb-1 text-gray-700">
+            <label
+              htmlFor="register-password"
+              className="block mb-1 text-sm font-medium text-gray-700"
+            >
               Password
             </label>
             <input
-              id="password"
+              id="register-password"
               type="password"
               required
+              autoComplete="new-password"
+              value={formData.password}
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="border border-gray-300 p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-              placeholder="Create a password"
+              className="border border-gray-300 p-2.5 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+              placeholder="Create a strong password"
             />
           </div>
+
           <div>
-            <label htmlFor="contactNumber" className="block mb-1 text-gray-700">
+            <label
+              htmlFor="register-contact"
+              className="block mb-1 text-sm font-medium text-gray-700"
+            >
               Contact Number
             </label>
             <input
-              id="contactNumber"
-              type="text"
+              id="register-contact"
+              type="tel"
               required
+              autoComplete="tel"
+              value={formData.contactNumber}
               onChange={(e) =>
                 setFormData({ ...formData, contactNumber: e.target.value })
               }
-              className="border border-gray-300 p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+              className="border border-gray-300 p-2.5 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
               placeholder="e.g. 1234 5678"
             />
           </div>
-          {/* Optionally, display the invite token (read-only) if present */}{" "}
+
           {inviteToken && (
-            <div className="text-xs text-gray-500">
-              Invite Token: {inviteToken}
+            <div className="rounded-md bg-blue-50 p-2.5 text-xs text-blue-700 border border-blue-200">
+              Invite token applied: <span className="font-mono">{inviteToken}</span>
             </div>
           )}
+
           <button
             type="submit"
-            className="w-full bg-primary hover:bg-primary-hover text-white py-2 rounded hover:bg-blue-600 transition-all"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-xs"
             disabled={loading}
+            aria-busy={loading}
           >
-            {loading ? "Registering..." : "Register"}
+            {loading ? (
+              <>
+                <FaSpinner className="animate-spin" />
+                <span>Registering...</span>
+              </>
+            ) : (
+              "Create Account"
+            )}
           </button>
         </form>
-        <p className="mt-6 text-center text-sm">
+
+        <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-accent-500 hover:underline">
+          <Link
+            href="/"
+            className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          >
             Login here
           </Link>
         </p>
@@ -156,7 +206,13 @@ function RegisterContent() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div>Loading search parameters...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner size="large" label="Loading registration..." />
+        </div>
+      }
+    >
       <RegisterContent />
     </Suspense>
   );
