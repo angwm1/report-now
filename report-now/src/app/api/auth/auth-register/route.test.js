@@ -248,4 +248,16 @@ describe("POST /api/auth/auth-register", () => {
     expect(data.error).toBe("Internal Server Error");
     expect(data.details).toContain("Test error");
   });
+
+  test("returns 500 with Unknown error when non-Error thrown", async () => {
+    const request = {
+      json: () => Promise.reject("Plain string error"),
+    };
+
+    const response = await POST(request);
+    expect(response.status).toBe(500);
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Internal Server Error");
+    expect(data.details).toBe("Unknown error");
+  });
 });

@@ -1,6 +1,6 @@
 jest.mock("next-auth", () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: jest.fn(() => () => {}),
 }));
 
 jest.mock("@prisma/client", () => {
@@ -18,9 +18,16 @@ jest.mock("bcryptjs", () => ({
   compare: jest.fn(),
 }));
 
-import { authOptions } from "./[...nextauth]/route";
+import { authOptions, GET, POST } from "./[...nextauth]/route";
 import { PrismaClient } from "@prisma/client";
 import { compare } from "bcryptjs";
+
+describe("NextAuth route handler exports", () => {
+  test("exports GET and POST handlers from route", () => {
+    expect(typeof GET).toBe("function");
+    expect(typeof POST).toBe("function");
+  });
+});
 
 describe("authOptions.credentials.authorize", () => {
   const prisma = new PrismaClient();

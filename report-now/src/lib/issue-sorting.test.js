@@ -122,4 +122,24 @@ describe("sortIssues", () => {
     const sorted = sortIssues(sampleIssues, "unsupported-key");
     expect(sorted.map((i) => i.id)).toEqual([2, 3, 1]);
   });
+
+  test("falls back to default sort when sortType is falsy (null or empty string)", () => {
+    const sortedNull = sortIssues(sampleIssues, null);
+    expect(sortedNull.map((i) => i.id)).toEqual([2, 3, 1]);
+
+    const sortedEmpty = sortIssues(sampleIssues, "");
+    expect(sortedEmpty.map((i) => i.id)).toEqual([2, 3, 1]);
+  });
+
+  test("handles issues with missing createdAt timestamps", () => {
+    const mixed = [
+      { id: 31 },
+      { id: 32, createdAt: "2025-02-01T00:00:00.000Z" },
+    ];
+    const sortedNewest = sortIssues(mixed, "newest");
+    expect(sortedNewest[0].id).toBe(32);
+
+    const sortedOldest = sortIssues(mixed, "oldest");
+    expect(sortedOldest[1].id).toBe(32);
+  });
 });

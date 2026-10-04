@@ -187,4 +187,44 @@ describe("POST /api/invite", () => {
 
     console.error = originalError;
   });
+
+  test("uses NEXT_PUBLIC_API_URL when configured for invite links", async () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://app.reportnow.sg";
+    getServerSession.mockResolvedValue({ user: { role: "admin" } });
+    prismaInvite.create.mockResolvedValue({
+      token: "tok123",
+      email: "dept@gov.sg",
+      role: "governmentDepartment",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    const request = createRequest({ email: "dept@gov.sg" });
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("https://app.reportnow.sg/register?invite="),
+      }),
+    );
+
+    delete process.env.NEXT_PUBLIC_API_URL;
+  });
+
+  test("returns 500 with default error message when a non-Error is thrown", async () => {
+    getServerSession.mockResolvedValue({ user: { role: "admin" } });
+    const request = {
+      json: () => Promise.reject("string error"),
+    };
+
+    const originalError = console.error;
+    console.error = jest.fn();
+
+    const response = await POST(request);
+    expect(response.status).toBe(500);
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Internal server error");
+
+    console.error = originalError;
+  });
 });

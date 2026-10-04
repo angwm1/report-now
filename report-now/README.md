@@ -174,7 +174,7 @@ For local tests, OpenAI calls are mocked to avoid external requests.
 - Located in `src/app/api/**/route.test.js`, `src/lib/*.test.js`, and `tests/`.
 - Mocks Prisma, OpenAI, Cloudinary, and NextAuth to keep tests deterministic.
 - `jest.config.js` wraps `next/jest`; `jest.setup.js` loads `.env.test` and polyfills (`TextEncoder`, `File`, etc.).
-- Coverage snapshot: **98.18% statements / 91.52% branches / 98.14% functions / 99.15% lines** (16 test suites, 112 passing tests).
+- Coverage snapshot: **99.19% statements / 94.91% branches / 100% functions / 100% lines** (16 test suites, 122 passing tests).
 
 Run the full suite:
 
