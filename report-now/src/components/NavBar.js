@@ -14,13 +14,14 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from "./ui/navigation-menu";
-import { User2, Settings, LogOut } from "lucide-react";
+import { User2, Settings, LogOut, Shield } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/issues", label: "View Issues" },
   { href: "/issues/map", label: "Map" },
   { href: "/issues/report", label: "Report Issue" },
   { href: "/issues/my", label: "My Issues" },
+  { href: "/reviews", label: "Reviews" },
 ];
 
 const brandWrapperClasses =
@@ -114,6 +115,27 @@ export default function NavBar() {
                             <Settings className="h-4 w-4" />
                             Manage Account
                           </button>
+                          {(session.user?.role === "admin" ||
+                            session.user?.role === "superAdmin") && (
+                            <button
+                              type="button"
+                              onClick={() => router.push("/superAdmin/dashboard")}
+                              className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-purple-700 transition hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                            >
+                              <Shield className="h-4 w-4" />
+                              Admin Dashboard
+                            </button>
+                          )}
+                          {session.user?.role === "department" && (
+                            <button
+                              type="button"
+                              onClick={() => router.push("/admin")}
+                              className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-blue-700 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                            >
+                              <Shield className="h-4 w-4" />
+                              Staff Dashboard
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => signOut({ callbackUrl: "/" })}
@@ -202,6 +224,25 @@ export default function NavBar() {
                 >
                   <Settings className="h-4 w-4" /> Manage Account
                 </button>
+                {(session.user?.role === "admin" ||
+                  session.user?.role === "superAdmin") && (
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate("/superAdmin/dashboard")}
+                    className="mb-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-purple-700 transition hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                  >
+                    <Shield className="h-4 w-4" /> Admin Dashboard
+                  </button>
+                )}
+                {session.user?.role === "department" && (
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate("/admin")}
+                    className="mb-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-blue-700 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    <Shield className="h-4 w-4" /> Staff Dashboard
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: "/" })}
