@@ -70,7 +70,6 @@ export default function IssueDetailPage() {
         const res = await fetch(`/api/issues/${params.id}`);
         if (!res.ok) throw new Error("Issue not found.");
         const data = await res.json();
-        console.log("Fetched issue data:", data);
         setIssue(data);
         setUpvoteIds(normalizeIdList(data.upvotes));
       } catch (err) {
@@ -110,7 +109,6 @@ export default function IssueDetailPage() {
         const res = await fetch(`/api/issues/${params.id}`);
         if (!res.ok) throw new Error("Issue not found.");
         const data = await res.json();
-        console.log("Refreshed issue data:", data);
         setIssue(data);
         setUpvoteIds(normalizeIdList(data.upvotes));
       } catch (err) {

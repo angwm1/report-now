@@ -64,7 +64,6 @@ export default function MapWithPanel({ issues }) {
               position={[issue.latitude, issue.longitude]}
               eventHandlers={{
                 click: () => {
-                  console.log("Marker clicked!", issue);
                   setSelectedIssue(issue);
                 },
               }}
@@ -104,7 +103,11 @@ export default function MapWithPanel({ issues }) {
                     >
                       <Image
                         src={url}
-                        alt=""
+                        alt={
+                          selectedIssue.title
+                            ? `${selectedIssue.title} photo ${idx + 1}`
+                            : `Issue photo ${idx + 1}`
+                        }
                         fill
                         // 'object-contain' ensures no cropping
                         className="object-contain"

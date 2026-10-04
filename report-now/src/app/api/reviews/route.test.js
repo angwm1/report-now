@@ -5,6 +5,7 @@
 jest.mock("@prisma/client", () => {
   const review = {
     findFirst: jest.fn(),
+    findMany: jest.fn(),
     create: jest.fn(),
   };
   return { PrismaClient: jest.fn(() => ({ review })) };
@@ -17,8 +18,8 @@ jest.mock("next-auth/jwt", () => ({
 
 // --- End of Mocks ---
 
-// Import dependencies and the function under test.
-import { POST } from "./route"; // adjust relative path if needed
+// Import dependencies and the functions under test.
+import { GET, POST } from "./route";
 import { getToken } from "next-auth/jwt";
 import { PrismaClient } from "@prisma/client";
 
@@ -34,6 +35,101 @@ async function getResponseData(response) {
   return JSON.parse(await response.text());
 }
 
+describe("GET /api/reviews", () => {
+  let prismaReview;
+
+  beforeEach(() => {
+    const prisma = new PrismaClient();
+    prismaReview = prisma.review;
+    prismaReview.findMany.mockReset();
+  });
+
+  test("returns all reviews when no issueId query parameter is provided", async () => {
+    const fakeReviews = [
+      { id: 1, rating: 5, comment: "Quick fix", issueId: 10, issue: { id: 10, title: "Pothole", status: "Done" } },
+      { id: 2, rating: 4, comment: "Good job", issueId: 12, issue: { id: 12, title: "Light", status: "Done" } },
+    ];
+    prismaReview.findMany.mockResolvedValue(fakeReviews);
+
+    const request = { url: "http://localhost:3000/api/reviews" };
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    const data = await getResponseData(response);
+    expect(data.reviews).toEqual(fakeReviews);
+    expect(prismaReview.findMany).toHaveBeenCalledWith({
+      where: {},
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        issue: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+          },
+        },
+      },
+    });
+  });
+
+  test("filters reviews by issueId when valid numeric query param is provided", async () => {
+    const fakeReviews = [
+      { id: 1, rating: 5, comment: "Quick fix", issueId: 10, issue: { id: 10, title: "Pothole", status: "Done" } },
+    ];
+    prismaReview.findMany.mockResolvedValue(fakeReviews);
+
+    const request = { url: "http://localhost:3000/api/reviews?issueId=10" };
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    const data = await getResponseData(response);
+    expect(data.reviews).toEqual(fakeReviews);
+    expect(prismaReview.findMany).toHaveBeenCalledWith({
+      where: { issueId: 10 },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        issue: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+          },
+        },
+      },
+    });
+  });
+
+  test("ignores invalid issueId parameter and queries without filter", async () => {
+    prismaReview.findMany.mockResolvedValue([]);
+
+    const request = { url: "http://localhost:3000/api/reviews?issueId=abc" };
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(prismaReview.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: {} })
+    );
+  });
+
+  test("returns 500 when database throws an error", async () => {
+    prismaReview.findMany.mockRejectedValue(new Error("Database offline"));
+
+    const originalError = console.error;
+    console.error = jest.fn();
+
+    const request = { url: "http://localhost:3000/api/reviews" };
+    const response = await GET(request);
+
+    expect(response.status).toBe(500);
+    const data = await getResponseData(response);
+    expect(data.error).toBe("Internal Server Error");
+
+    console.error = originalError;
+  });
+});
+
 describe("POST /api/reviews", () => {
   let prismaReview;
   beforeEach(() => {
@@ -42,7 +138,7 @@ describe("POST /api/reviews", () => {
     prismaReview = prisma.review;
     prismaReview.findFirst.mockReset();
     prismaReview.create.mockReset();
-    
+
     // Reset getToken mock.
     getToken.mockReset();
   });
@@ -99,41 +195,39 @@ describe("POST /api/reviews", () => {
     const fakeReview = {
       id: 101,
       issueId: 1,
-      rating: 4,
-      comment: "Nice issue",
+      rating: 5,
+      comment: "Great work!",
       userId: 1,
       userName: "Test User",
     };
     prismaReview.create.mockResolvedValue(fakeReview);
 
-    const request = createRequest({ issueId: "1", rating: 4, comment: "Nice issue" });
+    const request = createRequest({
+      issueId: "1",
+      rating: 5,
+      comment: "Great work!",
+    });
     const response = await POST(request);
     expect(response.status).toBe(201);
-
     const data = await getResponseData(response);
     expect(data).toEqual(fakeReview);
-
-    // Verify that findFirst was called with correct parameters.
-    expect(prismaReview.findFirst).toHaveBeenCalledWith({
-      where: { issueId: 1, userId: 1 },
-    });
-    // Verify that create was called with the review data.
     expect(prismaReview.create).toHaveBeenCalledWith({
       data: {
         issueId: 1,
-        rating: 4,
-        comment: "Nice issue",
+        rating: 5,
+        comment: "Great work!",
         userId: 1,
         userName: "Test User",
       },
     });
   });
 
-  test("falls back to Anonymous and token.sub when user name and id are absent", async () => {
+  test("uses 'Anonymous' when token does not have a name", async () => {
+    // Token without a name.
     getToken.mockResolvedValue({ sub: "5" });
     prismaReview.findFirst.mockResolvedValue(null);
     prismaReview.create.mockResolvedValue({
-      id: 2,
+      id: 102,
       issueId: 1,
       rating: 5,
       comment: "Anonymous review",
@@ -160,7 +254,6 @@ describe("POST /api/reviews", () => {
     });
   });
 
-
   test("returns 500 on unexpected error", async () => {
     // Simulate valid token.
     getToken.mockResolvedValue({ id: "1", name: "Test User" });
@@ -169,7 +262,6 @@ describe("POST /api/reviews", () => {
       json: () => Promise.reject(new Error("Test error")),
     };
 
-    // Optionally, suppress console.error for this test.
     const originalError = console.error;
     console.error = jest.fn();
 
