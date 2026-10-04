@@ -18,16 +18,18 @@ export default function AccountPage() {
   const [isPrefilling, setIsPrefilling] = useState(true);
   const [message, setMessage] = useState({ text: "", type: "" }); // "success" | "error" | ""
 
+  const userName =
+    (session && session.user && session.user.name && session.user.name.trim()) || "";
+
   // Derive initials for avatar
   const initials = useMemo(() => {
-    const name =
-      (session && session.user && session.user.name && session.user.name.trim()) || "";
-    if (!name) return "?";
-    const parts = name.split(/\s+/);
+    if (!userName) return "?";
+    const parts = userName.split(/\s+/);
     return ((parts[0] && parts[0][0]) || "")
       .concat((parts[1] && parts[1][0]) || "")
       .toUpperCase();
-  }, [session && session.user && session.user.name]);
+  }, [userName]);
+
 
   // Populate form with user data when session is available
   useEffect(() => {

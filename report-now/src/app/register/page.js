@@ -11,22 +11,15 @@ function RegisterContent() {
   const searchParams = useSearchParams();
 
   // Retrieve invite token from query parameter if present
-  const initialInviteToken = searchParams.get("invite") || "";
+  const inviteToken = searchParams.get("invite") || "";
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     contactNumber: "",
-    inviteToken: initialInviteToken,
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // If the invite token query param changes, update formData
-  useEffect(() => {
-    const token = searchParams.get("invite") || "";
-    setFormData((prev) => ({ ...prev, inviteToken: token }));
-  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,8 +29,9 @@ function RegisterContent() {
       const res = await fetch("/api/auth/auth-register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, inviteToken }),
       });
+
       setLoading(false);
       if (res.ok) {
         // After successful registration, log in the user automatically.
@@ -136,9 +130,9 @@ function RegisterContent() {
             />
           </div>
           {/* Optionally, display the invite token (read-only) if present */}{" "}
-          {formData.inviteToken && (
+          {inviteToken && (
             <div className="text-xs text-gray-500">
-              Invite Token: {formData.inviteToken}
+              Invite Token: {inviteToken}
             </div>
           )}
           <button
