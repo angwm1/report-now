@@ -49,14 +49,16 @@ ReportNow brings together everything required to manage real-world service reque
 
 ## Tech Stack
 
-- **Frontend:** Next.js 15 (App Router) with React 19 and Turbopack.
+- **Frontend:** Next.js 16 (App Router) with React 19 and Turbopack.
 - **Backend/API:** Next.js route handlers with Prisma ORM.
 - **Database:** PostgreSQL (compatible with MySQL or SQLite for local prototyping).
-- **Authentication:** NextAuth (Credentials provider, JWT sessions).
+- **Authentication:** NextAuth (Credentials provider, JWT sessions, role-based access control).
 - **Styling:** Tailwind CSS 4, shadcn/ui primitives, custom utility helper `cn`.
 - **Mapping:** Leaflet & React Leaflet for geospatial interactions.
 - **AI Services:** OpenAI Chat Completions (`gpt-5-mini`) for categorisation and duplicate detection.
-- **Tooling:** ESLint 9, Jest 29, python-docx, dotenv CLI.
+- **Tooling:** ESLint 9 (Flat Config), Jest 30, python-docx, dotenv CLI.
+- **SEO & PWA:** Dynamic sitemap, robots.txt, and Web App Manifest (`manifest.webmanifest`).
+- **Security:** Strict Content Security Policy (CSP), HSTS, Permissions-Policy, X-Frame-Options headers.
 
 ---
 
@@ -171,10 +173,10 @@ For local tests, OpenAI calls are mocked to avoid external requests.
 
 ### Automated Tests
 
-- Located in `src/app/api/**/route.test.js`, `src/lib/*.test.js`, and `tests/`.
-- Mocks Prisma, OpenAI, Cloudinary, and NextAuth to keep tests deterministic.
+- Located in `src/app/api/**/route.test.js`, `src/app/*.test.js`, `src/lib/*.test.js`, and `tests/`.
+- Mocks Prisma, OpenAI, Cloudinary, and NextAuth to keep tests deterministic and isolated.
 - `jest.config.js` wraps `next/jest`; `jest.setup.js` loads `.env.test` and polyfills (`TextEncoder`, `File`, etc.).
-- Coverage snapshot: **99.19% statements / 94.91% branches / 100% functions / 100% lines** (16 test suites, 122 passing tests).
+- Coverage snapshot: **99.25% statements / 95.28% branches / 100% functions / 100% lines** (19 test suites, 142 passing tests).
 
 Run the full suite:
 

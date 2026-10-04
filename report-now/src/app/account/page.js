@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function AccountPage() {
   const { data: session, status, update } = useSession();
@@ -100,6 +101,31 @@ export default function AccountPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-5">
           <CardSkeleton className="md:col-span-2" />
           <CardSkeleton className="md:col-span-3" />
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 mb-4 text-xl">
+            🔒
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">
+            Sign In Required
+          </h1>
+          <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+            Please sign in to access and manage your profile details, settings,
+            and contact information.
+          </p>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors shadow-xs"
+          >
+            Go to Sign In
+          </Link>
         </div>
       </div>
     );
