@@ -142,8 +142,6 @@ export async function checkAndMarkDuplicate(issueId) {
 
   const prompt = buildPrompt(issue, otherIssues);
 
-  console.log("[duplicate-detection] Prompt sent to model:", prompt);
-
   const completion = await openai.chat.completions.create({
     model: DUPLICATE_MODEL,
     max_completion_tokens: 400,
@@ -159,8 +157,6 @@ export async function checkAndMarkDuplicate(issueId) {
   });
 
   const content = completion?.choices?.[0]?.message?.content;
-
-  console.log("[duplicate-detection] Raw model response:", content);
 
   const decision = parseModelResponse(content);
 
