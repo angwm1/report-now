@@ -6,20 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { FaVideo, FaArrowUp } from "react-icons/fa"; // Import icons for media and voting
+import { haversineDistance } from "../lib/issue-sorting";
 
-// Simple Haversine formula for distance in KM
-function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Earth radius in KM
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // in kilometers
-}
 
 function normalizeIdList(raw) {
   if (!Array.isArray(raw)) {
@@ -239,7 +227,7 @@ export default function IssueCard({ issue }) {
               src={mediaSrc}
               alt={issue.title}
               fill
-              priority={true}
+              loading="lazy"
               sizes="(max-width: 768px) 100vw, 200px"
               className="object-cover transition duration-200 group-hover:scale-105"
             />
@@ -249,9 +237,9 @@ export default function IssueCard({ issue }) {
         <div className="flex flex-1 flex-col justify-between gap-3">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <h1 className="text-base font-semibold text-gray-900 transition-colors group-hover:text-gray-950">
+              <h3 className="text-base font-semibold text-gray-900 transition-colors group-hover:text-gray-950">
                 {issue.title}
-              </h1>
+              </h3>
               {/* Distance & Date */}
               <div className="text-xs font-medium text-gray-500 md:text-right">
                 {distanceKM ? `${distanceKM} km` : "Locating..."}
