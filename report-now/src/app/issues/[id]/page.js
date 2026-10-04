@@ -10,6 +10,7 @@ import TimelineSection from "@/components/TimelineSection";
 import EditStatusForm from "@/components/EditStatusForm";
 import LeaveReviewForm from "@/components/LeaveReviewForm";
 import ReviewCard from "@/components/ReviewCard";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { FaStar, FaStarHalfAlt, FaRegStar, FaArrowUp } from "react-icons/fa";
 
 function normalizeIdList(raw) {
@@ -187,13 +188,52 @@ export default function IssueDetailPage() {
   };
 
   if (loading || sessionStatus === "loading") {
-    return <p className="p-4">Loading issue details...</p>;
+    return (
+      <div
+        className="max-w-4xl mx-auto p-6 flex flex-col items-center justify-center min-h-[50vh]"
+        role="status"
+        aria-live="polite"
+      >
+        <LoadingSpinner size="large" label="Loading issue details..." />
+        <p className="mt-4 text-sm font-medium text-gray-500">
+          Loading issue details...
+        </p>
+      </div>
+    );
   }
   if (fetchError || !issue) {
     return (
-      <p className="p-4 text-red-500">
-        Error: {fetchError || "Issue not found."}
-      </p>
+      <div className="max-w-xl mx-auto p-6 my-10">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mb-3">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-red-900 mb-1">
+            Unable to Display Issue
+          </h2>
+          <p className="text-sm text-red-700 mb-5">
+            {fetchError || "The requested issue could not be found or has been removed."}
+          </p>
+          <Link
+            href="/issues"
+            className="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm"
+          >
+            ← Back to All Issues
+          </Link>
+        </div>
+      </div>
     );
   }
 

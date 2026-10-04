@@ -1,14 +1,28 @@
-// File: /src/app/issues/map/page.jsx
-import MapWrapper from "../../../components/MapWrapper";
+import MapWrapper from "@/components/MapWrapper";
+
+export const dynamic = "force-dynamic";
 
 export default async function MapPage() {
- // Use an absolute URL so Next.js can fetch from the server
- const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
- const res = await fetch(`${baseUrl}/api/issues`, { cache: "no-store" });
- const issues = await res.json();
- const validIssues = Array.isArray(issues) ? issues : [];
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXTAUTH_URL ||
+    "http://localhost:3000";
 
- return (
-    <MapWrapper issues={validIssues} />
- );
-}
+  let validIssues = [];
+  try {
+    const res = await fetch(`${baseUrl.replace(/\/$/, "")}/api/issues`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const issues = await res.json();
+      validIssues = Array.isArray(issues) ? issues : [];
+    }
+  } catch (err) {
+    if (err?.digest === "DYNAMIC_SERVER_USAGE") {
+      throw err;
+    }
+    console.error("Failed to fetch issues for map view:", err);
+  }
+
+  return <MapWrapper issues={validIssues} />;
+}

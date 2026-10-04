@@ -190,17 +190,18 @@ export default function ReportIssuePage() {
 
   function handleEnableGPS() {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      setError("Geolocation is not supported by your browser.");
       return;
     }
+    setError("");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLat(pos.coords.latitude);
         setLng(pos.coords.longitude);
       },
       (err) => {
-        console.error(err);
-        alert("Unable to retrieve your location.");
+        console.error("Geolocation error:", err);
+        setError("Unable to retrieve your location. Please check device permissions.");
       }
     );
   }
@@ -431,6 +432,8 @@ export default function ReportIssuePage() {
                     <Button
                       type="button"
                       onClick={handleEnableGPS}
+                      aria-label="Use current location via GPS"
+                      title="Use current location via GPS"
                       className="btn btn-outline w-10 h-10 p-0.5!"
                     >
                       <svg
@@ -463,6 +466,7 @@ export default function ReportIssuePage() {
                           setLat(null);
                           setLng(null);
                         }}
+                        aria-label="Clear selected coordinates"
                         className="btn btn-outline"
                       >
                         Clear
@@ -478,9 +482,17 @@ export default function ReportIssuePage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary w-full disabled:opacity-50"
+                aria-busy={loading}
+                className="btn btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? "Submitting..." : "Submit"}
+                {loading && (
+                  <div
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+                    role="status"
+                    aria-label="Submitting"
+                  />
+                )}
+                <span>{loading ? "Submitting..." : "Submit"}</span>
               </Button>
             </Field>
           </FieldSet>
