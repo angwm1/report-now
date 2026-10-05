@@ -18,6 +18,18 @@ updates:
     allow:
       - dependency-type: "direct"   # Update direct dependencies
       - dependency-type: "indirect" # Update transitive (indirect) dependencies
+    groups:                         # One PR per update type instead of one per package
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        update-types:
+          - "major"
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # Update GitHub Actions workflow dependencies
   - package-ecosystem: "github-actions"
@@ -31,3 +43,7 @@ updates:
       - "github-actions-update"
     commit-message:
       prefix: "github-actions"      # Commit prefix for GitHub Actions updates
+    groups:
+      actions:
+        patterns:
+          - "*"
