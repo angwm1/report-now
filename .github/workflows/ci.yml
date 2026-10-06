@@ -14,6 +14,10 @@ jobs:
   validate:
     name: Lint, Test & Build
     runs-on: ubuntu-latest
+    # The app lives in report-now/; the repo root holds coursework.
+    defaults:
+      run:
+        working-directory: report-now
 
     steps:
       - name: Checkout repository
@@ -24,6 +28,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: report-now/package-lock.json
 
       - name: Install dependencies
         run: npm ci

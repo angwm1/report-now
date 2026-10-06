@@ -2,7 +2,7 @@ version: 2
 updates:
   # Update npm dependencies for your Next.js and Prisma webapp
   - package-ecosystem: "npm"           # Manage JavaScript dependencies (Next.js, Prisma, etc.)
-    directory: "/"                   # Location of your package.json and package-lock.json/yarn.lock
+    directory: "/report-now"         # Location of your package.json and package-lock.json/yarn.lock
     schedule:
       interval: "monthly"            # Check for updates on a monthly basis
       # Optionally, you can also set a specific day and time
